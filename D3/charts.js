@@ -143,7 +143,7 @@ function drawlinechart(dataset) {
     let ext = d3.extent(dataset, d => d.y);
     if (ext[0] > 0) ext[0] = 0;
     ext[1] = Math.round(ext[1] * 1.6, 0);
-    //ext = [0,10];
+    ext = [0,10];
     console.log(ext);
     var yScale = d3.scaleLinear()
         .domain(ext) // input 
