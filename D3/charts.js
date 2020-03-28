@@ -107,13 +107,14 @@ function x(d) {
 }
 
 function xx() {
-    var d = d3.csv("data.csv", function(data) {
+    d3.csv("data.csv", function(data) {
         data.forEach(function(d) {
             d.y = +d.y;
-        });  
+        };  
+        console.log(data);
+        drawlinechart(data);
     });
-    console.log(d);
-    drawlinechart(d);
+    
     //var d = d3.range(10).map(function (d) { return { "y": d3.randomUniform(1)() } });
     //drawlinechart(d);
     //d = d3.range(10).map(function (d) { return { "y": d3.randomUniform(10)() } });
