@@ -107,12 +107,14 @@ function x(d) {
 }
 
 function xx() {
-    var d = d3.range(10).map(function (d) { return { "y": d3.randomUniform(1)() } });
+    var d = d3.csv('data.csv');
+    console.log(d);
+    //var d = d3.range(10).map(function (d) { return { "y": d3.randomUniform(1)() } });
     drawlinechart(d);
-    d = d3.range(10).map(function (d) { return { "y": d3.randomUniform(10)() } });
-    drawlinechart(d);
-    d = d3.range(10).map(function (d) { return { "y": d3.randomUniform(6)() } });
-    drawlinechart(d);
+    //d = d3.range(10).map(function (d) { return { "y": d3.randomUniform(10)() } });
+    //drawlinechart(d);
+    //d = d3.range(10).map(function (d) { return { "y": d3.randomUniform(6)() } });
+    //drawlinechart(d);
 }
 function drawlinechart(dataset) {
     // 2. Use the margin convention practice 
