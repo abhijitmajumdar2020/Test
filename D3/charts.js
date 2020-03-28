@@ -107,10 +107,10 @@ function x(d) {
 }
 
 function xx() {
-    d3.csv("data.csv").then(function(data) {
-        data.forEach(function(d) {
-            d.y = +d.y;
-        });
+    d3.csv("data.csv", function(data) {
+        //data.forEach(function(d) {
+        //    d.y = +d.y;
+        //});
         console.log(data);
         drawlinechart(data);
     });
