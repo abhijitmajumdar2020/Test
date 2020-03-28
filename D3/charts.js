@@ -109,7 +109,7 @@ function x(d) {
 function xx() {
     var d = [];
     d3.csv("data.csv", function(data) {
-        console.log(data);
+        //console.log(data);
         d.push(data);
         //drawlinechart(data);
     });
