@@ -111,9 +111,9 @@ function xx() {
         data.forEach(function(d) {
             d.y = +d.y;
         });
-    console.log(data[0]);
-    drawlinechart(data);
-});
+        console.log(data);
+        drawlinechart(data);
+    });
  
     //var d = d3.range(10).map(function (d) { return { "y": d3.randomUniform(1)() } });
     //drawlinechart(d);
