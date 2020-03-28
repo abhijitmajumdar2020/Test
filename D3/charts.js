@@ -108,11 +108,8 @@ function x(d) {
 
 function xx() {
     d3.csv("data.csv", function(data) {
-        data.forEach(function(d) {
-            d.y = +d.y;
-        };  
         console.log(data);
-        drawlinechart(data);
+        //drawlinechart(data);
     });
     
     //var d = d3.range(10).map(function (d) { return { "y": d3.randomUniform(1)() } });
