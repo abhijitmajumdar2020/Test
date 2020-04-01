@@ -1,4 +1,4 @@
-ID, Tech, Area, Status, Priority, Created, Executed
+ID,Tech,Area,Status,Priority,Created,Executed
 T10125, WEB, LOAN, BLOCK, P1, 2020-01-28, 2020-02-03
 T10126, WEB, SAVE, PASS, P1, 2020-01-28, 2020-02-07
 T10127, MF, LOAN, NO RUN, P1, 2020-01-28, 
