@@ -1,91 +1,99 @@
 'use strict'
-let sectionData = {};
+
 //convention for dom items
 // sectionName for class to be used to change chrt backgound color when filtered, n stands for section number
-// sectionName-chart-nfor charts where n is index to cahrts[]
+// sectionName-chart-n for charts where n is index to cahrts[]
 // sectionName-filter-n for filter lable 
 // sectionName-table-n for table 
 
-function initialiseCounter(sectionName) {  ///external
+function loadAlldata() {
+    let remaining = Object.keys(params.sections).length;
+    //start multiple async read requsts and when remaining = 0 then all are done
+    for (let sectionName in params.sections) {
+        const $s = params.sections[sectionName];
+        d3.csv($s.datasource, function (row) {
+            //make sure the values are trimmed
+            for (let key in row)
+                if (typeof row[key] === "string") row[key] = row[key].trim();
+            //create calculated columns
+            if ($s.calculatedcols)
+                for (let newcol in $s.calculatedcols)
+                    if (!row[newcol]) row[newcol] = $s.calculatedcols[newcol](row); //create nowcol only if doesnt exist
+            $s.data.push(row);
+        })
+            .then(data => {
+                if (!--remaining) dataReady();
+            });
+    }
+}
+
+function dataReady() {
+    fixDates();
+    d3.select('#loader').style("display", "none");
+    for (let sectionName in params.sections) {
+        const $s = params.sections[sectionName];
+        sortData($s.data, $s.charts.table.sortcols);
+        createChartSpaces('#main', sectionName);
+        addChartsToDivs(sectionName);
+    }
+}
+function sortTable(sectionName, col) {
+    //check order
+    const $s = params.sections[sectionName];
+    if (!$s.charts.table.sortcols)
+        $s.charts.table.sortcols = [col, -1];
+    const sortcols = $s.charts.table.sortcols;
+    if (col == sortcols[0]) //if same col then toggel the sort order
+        sortcols[1] *= -1
+    else { //else change sortcol
+        sortcols[0] = col //if sortcols = [col,1] is used then it does not copy back to params!
+        sortcols[1] = 1;
+    }
+    sortData($s.data, sortcols);
+    filterChanged(sectionName);
+}
+function sortData(data, sortcols) {
+    if (sortcols) {
+        data.sort(
+            (a, b) => {
+                for (let i = 0; i < sortcols.length; i += 2) {
+                    const sortOrder = sortcols[i + 1],
+                        col = sortcols[i];
+                    if (!a[col] == undefined) return 0;
+                    if (a[col] > b[col]) return sortOrder;
+                    if (a[col] < b[col]) return -sortOrder;
+                }
+                return 0;
+            }
+        )
+    }
+}
+function initialiseCounter(sectionName) {
     let $$ = new function () {
-        this.section = params.sections[sectionName];  //<<<<
-        this.headers = [];        //the headers from data   
-        this.headerIndex = [];   //the corrospoding column of the headers, perhaps reuired in future
-        this.titles = [];        //chart titles
-        this.charts = [];     //chart objects
-        this.charttypes = [];     //chart types - bar, line, timeseries etc 
-        this.counts = [];        // counts in terms of [[cat1, cat2, cat3..],[count1, count2, count3..]]
-        this.filter = [];       //filter to apply
-        this.data = eval(params.sections[sectionName].data);          //data
+        this.charts = {};
+        this.counts = {};
+        this.filters = {};
         this.totalRecs = 0;
         this.filteredRec = 0;
     };
-    function createCalcuatedCols() {
-        if ($$.section.calculatedcols)
-            for (let f of $$.section.calculatedcols)
-                //check the header does not exist
-                if ($$.data.indexOf(f(0, 0)) == -1) {
-                    let rowNo = 0;
-                    for (let row of $$.data)
-                        row.push(f(rowNo++, row));
-                }
+    const $s = params.sections[sectionName];
+    $s.sectiondata = $$;
+    for (let e of $s.charts.bars.filters) {
+        $$.charts[e.col] = { chart: null, type: null, title: 'Count by ' + e.col, index: 0 };
+        $$.counts[e.col] = { cats: [...e.values], counts: [...e.values].fill(0) };
+        $$.filters[e.col] = null;
     }
-    function sortData() {
-        if ($$.section.charts.table.sortdata) {
-            let header = $$.data.shift(); //make a copy of the header and remove it
-            let sortCols = [...$$.section.charts.table.sortdata];
-            for (let i = 0; i < sortCols.length; i += 2)
-                sortCols[i] = header.indexOf(sortCols[i]);
-
-            $$.data.sort(
-                (a, b) => {
-                    for (let i = 0; i < sortCols.length; i += 2) {
-                        const sortOrder = sortCols[i + 1],
-                            col = sortCols[i];
-                        if (a[col] > b[col]) return sortOrder;
-                        if (a[col] < b[col]) return -sortOrder;
-                    }
-                    return 0;
-                }
-            )
-            $$.data.unshift(header); // reinstate the header
-        }
-    }
-
-    sectionData[sectionName] = $$;
-    createCalcuatedCols();
-    sortData();
-    //set calculated cols 
-    for (var col = 0; col < $$.data[0].length; col++) {
-        var keyMatch = $$.section.charts.bars.filters.filter(v => { return v.col == $$.data[0][col] })
-        if (keyMatch.length > 0) {
-            $$.headers.push(keyMatch[0].col);
-            $$.headerIndex.push(col);
-            $$.titles.push('Count by ' + keyMatch[0].col); //~<<<<<<<<<<<<<<<<<
-            $$.charts.push(null);
-            $$.charttypes.push(null);
-            $$.filter.push(null);
-            $$.counts.push([[], []]);
-            var lastEntry = $$.counts.length - 1;
-            $$.counts[lastEntry][0] = keyMatch[0].values.slice();
-            for (var i = 0; i < $$.counts[lastEntry][0].length; i++)
-                $$.counts[lastEntry][1].push(0);
-        }
-    }
-    reCountRecs(sectionName);
 }
 
 function isFiltered(row, sectionName) {
-    let $$ = sectionData[sectionName];
-    for (var col = 0; col < $$.filter.length; col++)
-        if ($$.filter[col] != null && $$.filter[col] != row[$$.headerIndex[col]])
+    const $$ = params.sections[sectionName].sectiondata;
+    for (const col in $$.filters)
+        if ($$.filters[col] != null && $$.filters[col] != row[col])
             return false;
     return true;
 }
 
-
 function getAgeBucket(raised, resolved) { //<<<<<<<<<<<<<<<todo change buckets based on parameters
-    //var start = new Date(raised);
     var end = (resolved == '' ? params.reportdate : resolved);
     var age = dateDiff(raised, end);
     var bins = [5, 10, 15], binBuckets = ['5D-', '5-10D', '10-15D', '15D+']
@@ -105,112 +113,121 @@ function dateDiff(start, end) {
         endDate = new Date(end);
     return Math.floor((endDate.getTime() - startDate.getTime()) / (24 * 3600 * 1000));
 }
-function reCountRecs(sectionName) {
-    let $$ = sectionData[sectionName];
+
+function countRecs(sectionName) {
+    const $$ = params.sections[sectionName].sectiondata;
+    const $s = params.sections[sectionName];
     $$.totalRecs = 0;
     $$.filteredRecs = 0;
 
     //zero the counters
-    for (let count of $$.counts)
-        count[1].fill(0); //count[0] has the categories and count[1] the counts
+    for (let entry in $$.counts)
+        $$.counts[entry].counts.fill(0);
 
-    var createTable = $$.section.charts.table != undefined;
+    var createTable = $s.charts.table != undefined;
     // for each row count (starting from 1) count if matched by filter
-    for (var row = 1; row < $$.data.length; row++) {
-        if (isActive($$.data[row], sectionName)) {
+    let rowNo = 0;
+    for (let row of $s.data) {
+        if (isActive(row, sectionName)) {
             $$.totalRecs++;
-            if (isFiltered($$.data[row], sectionName)) {
+            if (isFiltered(row, sectionName)) {
                 $$.filteredRecs++;
                 if (createTable)
-                    addToTable($$.filteredRecs, $$.data[row], sectionName);
-                for (var col = 0; col < $$.filter.length; col++) {
-                    var where = $$.counts[col][0].indexOf($$.data[row][$$.headerIndex[col]]);
-                    if (where == -1) {
-                        $$.counts[col][0].push($$.data[row][$$.headerIndex[col]]);
-                        $$.counts[col][1].push(0);
-                        where = $$.counts[col][0].length - 1;
-                    };
-                    $$.counts[col][1][where]++;
+                    addToTable($$.filteredRecs, row, sectionName);
+                for (let entry in $$.counts) {
+                    let index = $$.counts[entry].cats.indexOf(row[entry])
+                    if (index == -1) {
+                        $$.counts[entry].cats.push(row[entry]);
+                        index = $$.counts[entry].cats.length - 1;
+                    }
+                    $$.counts[entry].counts[index]++;
                 }
             }
         }
     }
 }
+
+
 function addChartsToDivs(sectionName) {
-    let $$ = sectionData[sectionName];
-    const chartCount = $$.headers.length;
-    let i = 0;
-    for (i = 0; i < chartCount; i++) {
-        $$.charts[i] = c3BarChart(sectionName + '-chart-' + i, $$.counts[i], onclickFunction);
-        $$.charttypes[i] = 'filtered bars';
+    let $$ = params.sections[sectionName].sectiondata;
+    const $s = params.sections[sectionName];
+
+    for (let key in $$.charts) {
+        $$.charts[key].chart = c3BarChart(sectionName + '-chart-' + $$.charts[key].index, [[...$$.counts[key].cats], [...$$.counts[key].counts]], onclickFunction);
+        $$.charts[key].type = 'filtered bars';
     }
     let trendData = createTrendData(sectionName);
     const callout = [
-        { value: $$.section.charts.trend.start, text: 'Test Start' },
-        { value: $$.section.charts.trend.end, text: 'Test End' }
+        { value: $s.charts.trend.start, text: 'Test Start' },
+        { value: $s.charts.trend.end, text: 'Test End' }
     ];
-    $$.charts.push(c3LineChart(sectionName + '-chart-' + i, trendData, null, callout));
-    $$.charttypes.push('timeseries');
+    const i = $s.charts.bars.filters.length;
+    $$.charts.trend = {
+        chart: c3LineChart(sectionName + '-chart-' + i, trendData, null, callout),
+        type: 'timeseries',
+        index: i
+    }
     filterChanged(sectionName);
 }
 function refreshAllCharts(sectionName) {
-    let $$ = sectionData[sectionName];
-    for (let i = 0; i < $$.charts.length; i++)
-        if ($$.charttypes[i] == 'filtered bars')
-            c3RefreshChart($$.charts[i], $$.counts[i], $$.filter[i], sectionName);
-        else if ($$.charttypes[i] == 'timeseries') {
+    let $$ = params.sections[sectionName].sectiondata;
+    for (let key in $$.charts) {
+        if ($$.charts[key].type == 'filtered bars')
+            c3RefreshChart($$.charts[key].chart, [[...$$.counts[key].cats], [...$$.counts[key].counts]], $$.filters[key], sectionName);
+        else if ($$.charts[key].type == 'timeseries') {
             const trendData = createTrendData(sectionName);
-            c3RefreshChart($$.charts[i], trendData, null, sectionName);
+            c3RefreshChart($$.charts[key].chart, trendData, null, sectionName);
         }
+    }
 }
-function onclickFunction(cat, id) {  ///external
+function onclickFunction(cat, id) {
     let idParts = id.split('-');
     let sectionName = idParts[0];
-    let $$ = sectionData[sectionName];
-    let chartIndex = idParts[2];//id.replace("chart", "");
+    let $$ = params.sections[sectionName].sectiondata;
     //toggle the filter
-    $$.filter[chartIndex] = ($$.filter[chartIndex] == cat ? null : cat);
+    const chartIndex = Object.keys($$.filters)[idParts[2]];
+    $$.filters[chartIndex] = ($$.filters[chartIndex] == cat ? null : cat);
     filterChanged(sectionName);
 }
 function resetFilter(sectionName) {
-    let $$ = sectionData[sectionName];
-    //reset the filter
-    $$.filter.fill(null);
+    let $$ = params.sections[sectionName].sectiondata;
+    for (let f in $$.filters)
+        $$.filters[f] = null;
     filterChanged(sectionName);
 }
 function filterChanged(sectionName) {
     //create the filter message
     var filterMessage = ceateFilterMeassge(sectionName);
     //if filter set then change the background color of charts
-    var backColor = filterMessage == '' ? 'white' : 'lightgrey';
-    var elements = document.getElementsByClassName(sectionName);
-    for (let e of elements)
-        e.style.backgroundColor = backColor;
+    var backColor = filterMessage == 'Filter: None' ? 'white' : 'lightgrey';
+    d3.selectAll("." + sectionName)
+        .style("background-color", backColor);
 
-    filterMessage == '' ? filterMessage = 'Filter: None' : filterMessage = 'Filter: ' + filterMessage;
-    reCountRecs(sectionName);
+    //filterMessage == '' ? filterMessage = 'Filter: None' : filterMessage = 'Filter: ' + filterMessage;
+    countRecs(sectionName);
     var filterBar = document.getElementById(sectionName + '-filter-values');
-    let $$ = sectionData[sectionName];
+    let $$ = params.sections[sectionName].sectiondata;
     var percentRecs = Math.floor(100 * $$.filteredRecs / $$.totalRecs);
     filterBar.style.width = percentRecs + '%';
     filterBar.innerHTML = `${$$.filteredRecs}  of ${$$.totalRecs} shown (${percentRecs}%)`;
     refreshAllCharts(sectionName);
 }
 function ceateFilterMeassge(sectionName) {
-    let $$ = sectionData[sectionName],
+    let $$ = params.sections[sectionName].sectiondata,
         filterMessage = '',
         i = 0;
-    for (const f of $$.filter)
-        if (f != null) {
+    for (const f in $$.filters) {
+        if ($$.filters[f] != null) {
             if (filterMessage != '')
                 filterMessage = filterMessage + ' & ';
-            filterMessage = filterMessage + $$.headers[i++] + '=' + f;
+            filterMessage = filterMessage + f + '=' + $$.filters[f];
         }
-    return filterMessage;
+    }
+    return filterMessage == '' ? 'Filter: None' : 'Filter: ' + filterMessage;
 }
 
 function createTrendData(sectionName) {
-    switch (sectionData[sectionName].section.charts.trend.type.style) {
+    switch (params.sections[sectionName].charts.trend.type.style) {
         case 'test':
             return createTrendDataTest(sectionName)
         case 'defect':
@@ -221,17 +238,12 @@ function createTrendData(sectionName) {
 }
 
 function createTrendDataTest(sectionName) {
-    let $$ = sectionData[sectionName];
-    for (var i = 0; i < $$.filter.length; i++) {
-        if ($$.filter[i] != null) {
-            if ($$.headers[i] == $$.section.charts.trend.nofilter)
-                return null
-        }
-    }
-
+    let $$ = params.sections[sectionName].sectiondata;
+    const $s = params.sections[sectionName];
+    if ($$.filters[$s.charts.trend.nofilter] != null)
+        return null
     let cats = [];
-    const { start, end, type } = $$.section.charts.trend;
-    //createDateArray(cats, addDays($$.section.charts.trend.start, -7), addDays($$.section.charts.trend.end, 14));
+    const { start, end, type } = $s.charts.trend;
     createDateArray(cats, addDays(start, -7), addDays(end, 14));
     let counts = cats.slice().fill(0),
         scope = counts.slice(),
@@ -239,24 +251,16 @@ function createTrendDataTest(sectionName) {
         plan = forecast.slice(),
         scopeCount = 0;
     const reportDateIndex = cats.indexOf(params.reportdate);
-    var createdColIndex = $$.data[0].indexOf(type.scope),
-        //var createdColIndex = $$.data[0].indexOf($$.section.charts.trend.type.scope),
-        exArray = $$.section.charts.trend.type.executed,
-        executedColIndex = $$.data[0].indexOf(exArray[0]),
-        statusColIndex = $$.data[0].indexOf(exArray[1]);
+    const exArray = $s.charts.trend.type.executed;
 
-    for (var row = 1; row < $$.data.length; row++) {
-        if (isFiltered($$.data[row], sectionName)) {
+    for (let row of $s.data) {
+        if (isFiltered(row, sectionName)) {
             scopeCount++;
-            var where = dateDiff(cats[0], $$.data[row][createdColIndex]);
+            var where = dateDiff(cats[0], row[type.scope]);
             scope[where]++;
-
-            // status must be pass fail to count as executed
-            ////////////// paramerise
-            var status = $$.data[row][statusColIndex];
-
-            if (exArray[2].indexOf(status) != -1) { //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-                where = dateDiff(cats[0], $$.data[row][executedColIndex]);
+            var status = row[exArray[1]];
+            if (exArray[2].indexOf(status) != -1) {
+                where = dateDiff(cats[0], row[exArray[0]]);
                 counts[where]++;
             }
         }
@@ -285,46 +289,36 @@ function createTrendDataTest(sectionName) {
     if (type.plan) {
         let startPoint = cats.indexOf(start),
             endPoint = cats.indexOf(end);
-        for (i = startPoint; i <= endPoint; i++) {
-            plan[i] = Math.round(scopeCount * type.plan(i - startPoint,endPoint - startPoint));
-        }
-
-        return [cats, 'Executed', counts, 'Scope', scope, 'Forecast', forecast, 'Plan', plan];
+        for (i = startPoint; i <= endPoint; i++)
+            plan[i] = Math.round(scopeCount * type.plan(i - startPoint, endPoint - startPoint));
     }
     else
-        return [cats, 'Executed', counts, 'Scope', scope, 'Forecast', forecast];
-
+        plan = null;
+    return [cats, 'Executed', counts, 'Scope', scope, 'Forecast', forecast, 'Plan', plan];
 }
 
 function createTrendDataDefect(sectionName) {
-    let $$ = sectionData[sectionName],
-        ageBucketSet = null;
+    const $s = params.sections[sectionName],
+        $$ = params.sections[sectionName].sectiondata;
     //get the required data from the params
-    let { nofilter, agefilter, type, start, end } = $$.section.charts.trend;
-    for (var i = 0; i < $$.filter.length; i++) {
-        if ($$.filter[i] != null) {
-            if ($$.headers[i] == nofilter)
-                return null
-            else if ($$.headers[i] == agefilter)
-                ageBucketSet = $$.filter[i];
-        }
-    }
-    const raisedColIndex = $$.data[0].indexOf(type.raised);
-    const resolvedColIndex = $$.data[0].indexOf(type.resolved);
+    let { nofilter, agefilter, type, start, end } = $s.charts.trend;
+    if ($$.filters[nofilter] != null)
+        return null;
+    let ageBucketSet = $$.filters[agefilter];
+
     let cats = [];
-    createDateArray(cats, addDays($$.section.charts.trend.start, -7), addDays($$.section.charts.trend.end, 14));
+    createDateArray(cats, addDays(start, -7), addDays(end, 14));
     let counts = cats.slice().fill(0),
         raised = counts.slice(),
         resolved = counts.slice(),
         forecast = counts.slice().fill(NaN);
     const reportDateIndex = cats.indexOf(params.reportdate);
 
-
-    for (var row = 1; row < $$.data.length; row++) {
-        if (isFiltered($$.data[row], sectionName)) {
-            var startDate = $$.data[row][raisedColIndex];
-            var endDate = $$.data[row][resolvedColIndex];
-            if (endDate == '') endDate = $$.section.charts.trend.end;//d.toISOString().slice(0, 10); <<<<<<<<<<<<<<<<<<OK???? 
+    for (let row of $s.data) {
+        if (isFiltered(row, sectionName)) {
+            var startDate = row[type.raised];
+            var endDate = row[type.resolved];
+            if (endDate == '') endDate = $s.charts.trend.end;
             let arrayStart = dateDiff(cats[0], startDate);
             let arrayEnd = dateDiff(cats[0], endDate);
             for (var i = arrayStart; i < arrayEnd; i++)
@@ -351,7 +345,7 @@ function createTrendDataDefect(sectionName) {
     //add forecast after report date
     forecast[reportDateIndex] = counts[reportDateIndex];
     for (var i = reportDateIndex + 1; i < cats.length; i++) {
-        if (cats[i] <= $$.section.charts.trend.end)
+        if (cats[i] <= end)
             forecast[i] = Math.max(0, Math.floor(forecast[i - 1] + avRaised - avResolved))
         else
             forecast[i] = Math.max(0, Math.floor(forecast[i - 1] - avResolved));
@@ -360,7 +354,7 @@ function createTrendDataDefect(sectionName) {
     return [cats, 'Count', counts, 'Forecast', forecast];
 }
 function isActive(row, sectionName) {
-    const include = sectionData[sectionName].section.charts.bars.include;
+    const include = params.sections[sectionName].charts.bars.include;
     if (include)
         return include(row)
     else
@@ -368,8 +362,8 @@ function isActive(row, sectionName) {
 }
 function copyTable(id) { ///external
     //create a tab delimited text
-    table = document.getElementById(id);
-    copyText = '';
+    const table = document.getElementById(id);
+    let copyText = '';
     for (let row of table.rows) {
         for (let cell of row.cells)
             copyText += cell.innerHTML + "\t";
@@ -409,40 +403,32 @@ function createDateArray(arr, startDate, endDate) {
 /////////////////FOLLOWING REQUIRED ONLY FOR DEMO
 ///MOVE ALL DATES AS IF REPORT DATE IS YESTERDAY////////////
 function fixDates() {
-    let today = new Date();
-    let daysToAdd = dateDiff(params.reportdate, today.toISOString().slice(0, 10)) - 1;
+    const today = new Date();
+    const daysToAdd = dateDiff(params.reportdate, today.toISOString().slice(0, 10)) - 1;
+    if (daysToAdd == 0) return;
     //change all dates
     params.reportdate = addDays(params.reportdate, daysToAdd);
-
-
-    if (params.sections.SIT) {
-        params.sections.SIT.charts.trend.start = addDays(params.sections.SIT.charts.trend.start, daysToAdd);
-        params.sections.SIT.charts.trend.end = addDays(params.sections.SIT.charts.trend.end, daysToAdd);
-        fixDatesOne(SITTtests, ['Created', 'Executed'], daysToAdd);
-    }
-    if (params.sections.UAT) {
-        params.sections.UAT.charts.trend.start = addDays(params.sections.UAT.charts.trend.start, daysToAdd);
-        params.sections.UAT.charts.trend.end = addDays(params.sections.UAT.charts.trend.end, daysToAdd);
-        fixDatesOne(UATtests, ['Created', 'Executed'], daysToAdd);
-    }
-    if (params.sections.DEFECT) {
-        params.sections.DEFECT.charts.trend.start = addDays(params.sections.DEFECT.charts.trend.start, daysToAdd);
-        params.sections.DEFECT.charts.trend.end = addDays(params.sections.DEFECT.charts.trend.end, daysToAdd);
-        fixDatesOne(DefectData, ['Created', 'Closed'], daysToAdd);
-    }
-
+    fixDatesOne('SIT', ['Created', 'Executed'], daysToAdd);
+    fixDatesOne('UAT', ['Created', 'Executed'], daysToAdd);
+    fixDatesOne('DEFECT', ['Created', 'Closed', "History"], daysToAdd);
 }
 
-function fixDatesOne(data, cols, days) {
-    let colIndexes = cols.slice();
-    for (let i = 0; i < cols.length; i++)
-        colIndexes[i] = data[0].indexOf(cols[i]);
-
-    for (let r = 1; r < data.length; r++)
-        for (let i = 0; i < colIndexes.length; i++) {
-            let d = data[r][colIndexes[i]]
-            if (d != '') data[r][colIndexes[i]] = addDays(d, days)
-        }
+function fixDatesOne(sectionName, dateCols, days) {
+    const $s = params.sections[sectionName];
+    if (!$s) return;
+    $s.charts.trend.start = addDays($s.charts.trend.start, days);
+    $s.charts.trend.end = addDays($s.charts.trend.end, days);
+    for (let row of $s.data)
+        for (let col of dateCols)
+            if (row[col] != "")
+                if (col == "History") {
+                    let history = row[col].split("|"); //split as status date pairs
+                    for (let i = 1; i < history.length; i += 2) {
+                        history[i] = addDays(history[i], days);
+                    }
+                    row[col] = history.join("|");
+                } else
+                    row[col] = addDays(row[col], days);
 }
 function addDays(oldDate, days) {
     let newDate = new Date(oldDate);

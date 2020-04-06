@@ -10,7 +10,7 @@ function c3BarChart(chartDivID, data, onclickFunction) {
             onclick: function (dataItem, element) {
                 onclickFunction(d.categories[dataItem.x], chartDivID)
             },
-            colors: { Count: sectionData[sectionName].section.colors[0] }
+            colors: { Count: params.sections[sectionName].colors[0] }
         },
         axis: {
             x: {
@@ -30,10 +30,12 @@ function c3LineChart(chartDivID, data, onclickFunction, chartCallOuts) {
     d.push(data[0].slice());
     d[0].unshift('x');
     for (var i = 1; i < data.length; i += 2) {
-        d.push(data[i + 1].slice());
-        d[d.length - 1].unshift(data[i]);
+        if (data[i + 1]) {
+            d.push(data[i + 1].slice());
+            d[d.length - 1].unshift(data[i]);
+        }
     };
-    
+
     var chart = c3.generate({
         bindto: "#" + chartDivID,
         data: {
@@ -53,21 +55,21 @@ function c3LineChart(chartDivID, data, onclickFunction, chartCallOuts) {
                 }
             }
         },
-        regions: [{ axis: 'x', start: addDays(params.reportdate,1) }],
+        regions: [{ axis: 'x', start: addDays(params.reportdate, 1) }],
         legend: { show: d.length > 1 }
     });
     if (chartCallOuts)
         chart.xgrids(chartCallOuts);
     return chart;
 };
-function c3RefreshChart(chart, data, filterValue,sectionName) {
+function c3RefreshChart(chart, data, filterValue, sectionName) {
     if (data == null) {
         chart.hide();
         return;
     }
     chart.show();
     var d = transformData(data);
-    var barColor = sectionData[sectionName].section.colors[0];
+    var barColor = params.sections[sectionName].colors[0];
     if (filterValue !== null) barColor = barColor + '80';
     chart.data.colors({
         Count: barColor
@@ -87,11 +89,11 @@ function transformData(data) {
     var d = { categories: data[0].slice(), columns: [] };
     if (data.length > 2)
         for (var i = 1; i < data.length; i += 2) {
-            //if (data[i] == 'Executed') console.log(data[i + 1]);
-            var cols = data[i + 1].slice();
-            //if (data[i] == 'Executed') console.log(cols);
-            cols.unshift(data[i]);
-            d.columns.push(cols);
+            if (data[i + 1]) {
+                var cols = data[i + 1].slice();
+                cols.unshift(data[i]);
+                d.columns.push(cols);
+            }
         }
     else {
         var cols = data[1].slice();
