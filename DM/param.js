@@ -7,8 +7,7 @@ const params = {
     {
         SIT: {
             title: "SIT Execution",
-            datasource: "SIT.csv",
-            //datasource: "https://raw.githubusercontent.com/abhijitmajumdar2020/Test/master/DM/SIT.csv",
+            datasource: "SIT.csv", //"https://raw.githubusercontent.com/abhijitmajumdar2020/Test/master/DM/SIT.csv",
             data: [],
             colors: ["#003000", "#FFFFFF"], //backgound color, font color
             charts: {
@@ -56,7 +55,7 @@ const params = {
         },
         // UAT: {
         //     title: "UAT Execution",
-        //     datasource: "https://raw.githubusercontent.com/abhijitmajumdar2020/Test/master/DM/UAT.csv",
+        //     datasource: "uat.csv", //"https://raw.githubusercontent.com/abhijitmajumdar2020/Test/master/DM/UAT.csv",
         //     data: [],
         //     colors: ["#003366","#FFFFFF"],
         //     charts: {
@@ -93,7 +92,7 @@ const params = {
         //defects
         DEFECT: {
             title: "Active Defects",
-            datasource: "https://raw.githubusercontent.com/abhijitmajumdar2020/Test/master/DM/DEFECT.csv",
+            datasource: "DEFECT.csv", //"https://raw.githubusercontent.com/abhijitmajumdar2020/Test/master/DM/DEFECT.csv",
             data: [],
             calculatedcols: {
                 Age: function (row) { return  dateDiff(row["Created"], row["Closed"] == "" ? params.reportdate : row["Closed"]) },
