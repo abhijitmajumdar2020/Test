@@ -213,7 +213,6 @@ function filterChanged(sectionName) {
         }
     }
     filterMessage = filterMessage == "" ? "" : "(Filter: "+ filterMessage+")";
-    console.log(filterMessage);
     var backColor = filterMessage == "" ? 'white' : 'lightgrey';
     d3.selectAll("." + sectionName)
         .style("background-color", backColor);
