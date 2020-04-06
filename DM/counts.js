@@ -51,6 +51,7 @@ function sortTable(sectionName, col) {
         sortcols[1] = 1;
     }
     sortData($s.data, sortcols);
+    countRecs(sectionName);
     filterChanged(sectionName);
 }
 function sortData(data, sortcols) {
