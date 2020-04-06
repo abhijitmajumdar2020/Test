@@ -7,7 +7,8 @@ const params = {
     {
         SIT: {
             title: "SIT Execution",
-            datasource: "https://raw.githubusercontent.com/abhijitmajumdar2020/Test/master/DM/SIT.csv",
+            datasource: "SIT.csv",
+            //datasource: "https://raw.githubusercontent.com/abhijitmajumdar2020/Test/master/DM/SIT.csv",
             data: [],
             colors: ["#003000", "#FFFFFF"], //backgound color, font color
             charts: {
