@@ -199,6 +199,7 @@ function resetFilter(sectionName) {
     let $$ = params.sections[sectionName].sectiondata;
     for (let f in $$.filters)
         $$.filters[f] = null;
+    countRecs(sectionName);
     filterChanged(sectionName);
 }
 function filterChanged(sectionName) {
