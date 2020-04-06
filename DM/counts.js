@@ -34,6 +34,7 @@ function dataReady() {
         const $s = params.sections[sectionName];
         sortData($s.data, $s.charts.table.sortcols);
         createChartSpaces('#main', sectionName);
+        countRecs(sectionName);
         addChartsToDivs(sectionName);
     }
 }
@@ -135,12 +136,13 @@ function countRecs(sectionName) {
                 if (createTable)
                     addToTable($$.filteredRecs, row, sectionName);
                 for (let entry in $$.counts) {
-                    let index = $$.counts[entry].cats.indexOf(row[entry])
+                    const count = $$.counts[entry];
+                    let index = count.cats.indexOf(row[entry])
                     if (index == -1) {
-                        $$.counts[entry].cats.push(row[entry]);
-                        index = $$.counts[entry].cats.length - 1;
+                        index = count.cats.push(row[entry]) - 1;
+                        count.counts[index] = 0;
                     }
-                    $$.counts[entry].counts[index]++;
+                    count.counts[index]++;
                 }
             }
         }
@@ -153,7 +155,8 @@ function addChartsToDivs(sectionName) {
     const $s = params.sections[sectionName];
 
     for (let key in $$.charts) {
-        $$.charts[key].chart = c3BarChart(sectionName + '-chart-' + $$.charts[key].index, [[...$$.counts[key].cats], [...$$.counts[key].counts]], onclickFunction);
+        const data = [[...$$.counts[key].cats], [...$$.counts[key].counts]];
+        $$.charts[key].chart = c3BarChart(sectionName + '-chart-' + $$.charts[key].index, data, onclickFunction);
         $$.charts[key].type = 'filtered bars';
     }
     let trendData = createTrendData(sectionName);
@@ -172,9 +175,10 @@ function addChartsToDivs(sectionName) {
 function refreshAllCharts(sectionName) {
     let $$ = params.sections[sectionName].sectiondata;
     for (let key in $$.charts) {
-        if ($$.charts[key].type == 'filtered bars')
-            c3RefreshChart($$.charts[key].chart, [[...$$.counts[key].cats], [...$$.counts[key].counts]], $$.filters[key], sectionName);
-        else if ($$.charts[key].type == 'timeseries') {
+        if ($$.charts[key].type == 'filtered bars') {
+            const data = [[...$$.counts[key].cats], [...$$.counts[key].counts]];
+            c3RefreshChart($$.charts[key].chart, data, $$.filters[key], sectionName);
+        } else if ($$.charts[key].type == 'timeseries') {
             const trendData = createTrendData(sectionName);
             c3RefreshChart($$.charts[key].chart, trendData, null, sectionName);
         }
@@ -187,6 +191,7 @@ function onclickFunction(cat, id) {
     //toggle the filter
     const chartIndex = Object.keys($$.filters)[idParts[2]];
     $$.filters[chartIndex] = ($$.filters[chartIndex] == cat ? null : cat);
+    countRecs(sectionName);
     filterChanged(sectionName);
 }
 function resetFilter(sectionName) {
@@ -197,22 +202,6 @@ function resetFilter(sectionName) {
 }
 function filterChanged(sectionName) {
     //create the filter message
-    var filterMessage = ceateFilterMeassge(sectionName);
-    //if filter set then change the background color of charts
-    var backColor = filterMessage == 'Filter: None' ? 'white' : 'lightgrey';
-    d3.selectAll("." + sectionName)
-        .style("background-color", backColor);
-
-    //filterMessage == '' ? filterMessage = 'Filter: None' : filterMessage = 'Filter: ' + filterMessage;
-    countRecs(sectionName);
-    var filterBar = document.getElementById(sectionName + '-filter-values');
-    let $$ = params.sections[sectionName].sectiondata;
-    var percentRecs = Math.floor(100 * $$.filteredRecs / $$.totalRecs);
-    filterBar.style.width = percentRecs + '%';
-    filterBar.innerHTML = `${$$.filteredRecs}  of ${$$.totalRecs} shown (${percentRecs}%)`;
-    refreshAllCharts(sectionName);
-}
-function ceateFilterMeassge(sectionName) {
     let $$ = params.sections[sectionName].sectiondata,
         filterMessage = '',
         i = 0;
@@ -223,7 +212,17 @@ function ceateFilterMeassge(sectionName) {
             filterMessage = filterMessage + f + '=' + $$.filters[f];
         }
     }
-    return filterMessage == '' ? 'Filter: None' : 'Filter: ' + filterMessage;
+    filterMessage = filterMessage == "" ? "" : "(Filter: "+ filterMessage+")";
+    console.log(filterMessage);
+    var backColor = filterMessage == "" ? 'white' : 'lightgrey';
+    d3.selectAll("." + sectionName)
+        .style("background-color", backColor);
+
+    var filterBar = document.getElementById(sectionName + '-filter-values');
+    var percentRecs = Math.floor(100 * $$.filteredRecs / $$.totalRecs);
+    filterBar.style.width = percentRecs + '%';
+    filterBar.innerHTML = `${$$.filteredRecs}  of ${$$.totalRecs} shown (${percentRecs}%)`;
+    refreshAllCharts(sectionName);
 }
 
 function createTrendData(sectionName) {
