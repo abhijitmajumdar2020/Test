@@ -9,7 +9,7 @@ let params = {
     {
         BUILD: {
             title: "Build",
-            datasource: "https://raw.githubusercontent.com/abhijitmajumdar2020/Test/master/DM/STORY.csv",
+            datasource: "STORY.csv",
             data: [],
             charts: {
                 trend: {
@@ -46,7 +46,7 @@ let params = {
         },
         SIT: {
             title: "Test",
-            datasource: "https://raw.githubusercontent.com/abhijitmajumdar2020/Test/master/DM/SIT.csv",
+            datasource: "SIT.csv",
             data: [],
             charts: {
                 trend: {
@@ -83,7 +83,7 @@ let params = {
         },
         DEFECT: {
             title: "Active Defects",
-            datasource: "https://raw.githubusercontent.com/abhijitmajumdar2020/Test/master/DM/DEFECT.csv",
+            datasource: "DEFECT.csv",
             data: [],
             calculatedcols: {
                 Age(row) { return dateDiff(row["Created"], row["Closed"] == "" ? params.reportdate : row["Closed"]) },
