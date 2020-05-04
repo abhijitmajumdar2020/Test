@@ -4,52 +4,84 @@ html,
     h2,
     h3,
     h4,
-    h5 {
+    h5,
+    h6 {
         font-family: "Verdana", sans-serif;
         /* font-family: "Raleway", sans-serif */
         /* cursor: pointer; */
     }
-
-
+    /* make the following h6 to chart-titles */
+    
+    .chart-title {
+      display: block;
+      font-size: 1em;
+      margin-top: .5em;
+      margin-bottom: 0em;
+      margin-left: 0;
+      margin-right: 0;
+      font-weight: bold;
+    }
     .c3-circles-Scope,
-    .c3-circles-Hi-forecast,
-    .c3-circles-Lo-forecast,
     .c3-circles-Forecast,
     .c3-circles-Plan {
         display: none;
     }
-
-    /* .c3-chart-lines .c3-lines-Scope,
-    .c3-lines-Hi-forecast,
-    .c3-lines-Lo-forecast,
-    .c3-lines-Forecast {
-        stroke-dasharray: 3, 6;
-        stroke: darkblue;
-        stroke-width: '20';
+    .mychart {
+      width: 100%;
+      min-height: 300px;
+    }
+    /* .c3-chart-lines {
+      stroke:white;
     } */
-    .loader {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        z-index: 1;
-        width: 150px;
-        height: 150px;
-        margin: -75px 0 0 -75px;
-        border: 16px solid #f3f3f3;
-        border-radius: 50%;
-        border-top: 16px solid #3498db;
-        width: 120px;
-        height: 120px;
-        -webkit-animation: spin 2s linear infinite;
-        animation: spin 2s linear infinite;
-      }
+    .c3-chart-line .c3-lines-Plan {
+        stroke-dasharray: 2, 2;
+        stroke: currentColor;
+        /* stroke-width: '20'; */
+    } 
+
+    .c3-chart-line .c3-lines-Forecast {
+      stroke-width: 5px;
+      stroke-dasharray: 3, 3;
+      stroke: red;
+      /* stroke-width: '20'; */
+  } 
+  .insightgrid {
+    display: grid;
+    grid-gap: 1rem;
+    padding: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    /* grid-template-columns: repeat(4, 1fr); */
+  }
+  .loaderwrap {
+    position: absolute;
+    z-index: 1;
+    height: 100%;
+    width: 100%;
+    left: 0px;
+    top: 0px;
+    background-color:white;
+  }
+  .loader {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 1;
+    width: 200px;
+    height: 200px;
+    margin: -75px 0 0 -75px;
+    border: 40px solid #0570b0;
+    border-radius: 100%;
+    border-top: 40px solid white;
+    -webkit-animation: spin 2s linear infinite;
+    animation: spin 2s linear infinite;
+  }
       
-      @-webkit-keyframes spin {
-        0% { -webkit-transform: rotate(0deg); }
-        100% { -webkit-transform: rotate(360deg); }
-      }
+  @-webkit-keyframes spin {
+    0% { -webkit-transform: rotate(0deg); }
+    100% { -webkit-transform: rotate(360deg); }
+  }
       
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
