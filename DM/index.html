@@ -98,7 +98,12 @@
 
         function go() {
             if (params.message) {
-                document.getElementById('mesage-text').innerHTML = params.message;
+                const messgelines = params.message.split(".");
+                d3.select("#mesage-text").selectAll("p")
+                    .data(messgelines)
+                    .enter()
+                    .append("p")
+                    .text(d => d);
                 document.getElementById('splash').style.display = 'block';
             }
             fixDates();

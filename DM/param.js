@@ -3,13 +3,13 @@
 let params = {
     //global params
     reportdate: "2020-02-25",
-    message: "These charts use dummy (but relastic) data.  Please click on the bar charts to see how display changes.  Similar metrics, coupled with daily stand up are used to sucessfully navigate complex projects",
+    message: "These charts use assumed, but relastic, data. Complex programmes are sucessfully completed using similar metrics. Please click on the bar charts to see how display changes.",
     colors: ['#f1eef6', '#bdc9e1', '#74a9cf', '#0570b0'], //PuBu (purple blue)
     sections:
     {
         BUILD: {
             title: "Build",
-            datasource: "STORY.csv",
+            datasource: "https://raw.githubusercontent.com/abhijitmajumdar2020/Test/master/DM/STORY.csv",
             data: [],
             charts: {
                 trend: {
@@ -46,7 +46,7 @@ let params = {
         },
         SIT: {
             title: "Test",
-            datasource: "SIT.csv",
+            datasource: "https://raw.githubusercontent.com/abhijitmajumdar2020/Test/master/DM/SIT.csv",
             data: [],
             charts: {
                 trend: {
@@ -83,7 +83,7 @@ let params = {
         },
         DEFECT: {
             title: "Active Defects",
-            datasource: "DEFECT.csv",
+            datasource: "https://raw.githubusercontent.com/abhijitmajumdar2020/Test/master/DM/DEFECT.csv",
             data: [],
             calculatedcols: {
                 Age(row) { return dateDiff(row["Created"], row["Closed"] == "" ? params.reportdate : row["Closed"]) },
