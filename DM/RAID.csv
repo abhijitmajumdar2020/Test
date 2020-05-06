@@ -1,4 +1,4 @@
-ID,Owner,Area,Status,Type,Due Date,Impact,Likelyhood,Dependency On
+ID,Owner,Area,Status,Type,Due Date,Impact,Likelyhood,Resolver Team
 RAID74,Team2,LOAN,OPEN,RISK,2020-03-07,L,L,NA
 RAID75,Team1,INVEST,OPEN,ISSUE,2020-03-09,H,NA,NA
 RAID76,Team1,INVEST,OPEN,RISK,2020-03-10,L,M,NA
