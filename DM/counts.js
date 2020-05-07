@@ -663,15 +663,40 @@ function getColor(sectionName, index = 0) {
 
 }
 function generteInsight(insights) {
+    //let maxheight = -1;
+    //for (let i = 0; i < Math.min(4, insights.length); i++) {
+    //    const div = d3.select("#insights-" + i);
+    //    if (!div) break;
+    //    div.html("");
+    //    div.style("text-align", "center");
+    //    div.append("p")
+    //        .attr("class", "w3-xxlarge")
+    //        .style("background-color", insights[i].color)
+    //        .text(insights[i].headline);
+    //    //div.append("br");
+    //    div.append("p")
+    //        .attr("class", "w3-tiny")
+    //        .text(insights[i].message);
+    //    maxheight = Math.max(maxheight, div.style("height").slice(0, -2)); //see note below
+    //}
+    ////////MUST BE A BETTER WAY TO SIZE ALL TH SAME HEIGHT
+    //for (let i = 0; i < Math.min(5, insights.length); i++) {
+    //    const div = d3.select("#insights-" + i);
+    //    if (!div) break;
+    //    div.style("height", maxheight + "px");
+    //}
     let maxheight = -1;
     for (let i = 0; i < Math.min(4, insights.length); i++) {
         const div = d3.select("#insights-" + i);
         if (!div) break;
-        div.html("");
+        div.html("")
+            .classed("w3-leftbar w3-border-red w3-border-orange w3-border-green", false);
+        if (insights[i].color != "none")
+            div.classed("w3-leftbar w3-border-" + insights[i].color, true)
+
         div.style("text-align", "center");
         div.append("p")
             .attr("class", "w3-xxlarge")
-            .style("background-color", insights[i].color)
             .text(insights[i].headline);
         //div.append("br");
         div.append("p")
