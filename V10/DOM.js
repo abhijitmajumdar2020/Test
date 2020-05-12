@@ -196,7 +196,7 @@ function createChartSpaces(div, sectionName) {
         title = !$s.charts.trend.title ? sectionName : $s.charts.trend.title;
         let wrapper = d3.select(div)
             .append("div")
-            .attr("class", "grid450")
+            .attr("class", "grid300")
 
         addOneSpace(wrapper, { text: title })
             .append("div")
