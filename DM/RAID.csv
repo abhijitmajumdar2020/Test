@@ -1,4 +1,4 @@
-ID,Owner,Area,Status,Type,Due Date,Impact,Likelyhood,Resolver Team
+ID,Owner,Area,Status,Type,Due Date,Impact,Likelyhood,Resolver_Team
 RAID74,Team1,SAVE,OPEN,ISSUE,2020-03-11,L,NA,Team1
 RAID75,Team1,LOAN,OPEN,RISK,2020-03-10,M,L,Team1
 RAID76,Team2,SAVE,OPEN,DEPENDENCY,2020-03-03,L,NA,Team6
