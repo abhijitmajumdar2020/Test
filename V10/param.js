@@ -11,6 +11,7 @@ let params = {
     reportdate: "2020-02-25",
     message: "These charts use assumed, but relastic, data. Complex programmes are sucessfully completed using similar metrics. Please click on the bar charts to see how display changes.",
     colors: ['#f1eef6', '#bdc9e1', '#74a9cf', '#0570b0'], //PuBu (purple blue)
+    //colors: ['#0570b0', '#74a9cf', '#bdc9e1', '#f1eef6'], //reverse PuBu (purple blue)
     sections:
     {
         RAID: {

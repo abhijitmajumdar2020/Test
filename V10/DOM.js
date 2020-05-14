@@ -123,9 +123,13 @@ function createChartSpaces(div, sectionName) {
         //////////////////////////////////////////////////////////replace with slicer
         {
             let id = sectionName + "-filter-values";
-            let wrapper = d3.select(div)
+            let filterdiv = d3.select(div)
+                .append("div")
+                .attr("class", "w3-container");
+            //.attr("class", "grid300");
+            let wrapper = filterdiv//d3.select(div)
                 .append("div").style("padding-bottom", "10px")
-                .append("div").attr("class", "w3-container")
+                //.append("div").attr("class", "w3-container")
                 .append("div").attr("class", "w3-bar w3-white w3-card-2")
                 .append("div").attr("class", "w3-bar-item")
                 .attr("id", id)
@@ -143,9 +147,9 @@ function createChartSpaces(div, sectionName) {
                 //          </div>
                 //     </div>
                 // </div>
-                let wrapper = d3.select(div)
+                let wrapper = filterdiv//d3.select(div)
                     .append("div")
-                    .attr("class", "w3-container")
+                    //.attr("class", "w3-container")
                     .append("div")
                     .attr("class", "w3-bar w3-white w3-card-2");
                 wrapper.append("a")
@@ -170,7 +174,7 @@ function createChartSpaces(div, sectionName) {
                         const y = x.append("div")
                             .attr("id", id)
                             .attr("class", "w3-dropdown-content w3-bar-block w3-card-2");
-                        count[key].cats.forEach((element,i) => {
+                        count[key].cats.forEach((element, i) => {
                             //const filterId = `${id}-${element}`; ////avoid .col how about index number
                             const filterId = `${id}-${i}`; ////avoid .col how about index number
                             y.append("a")
@@ -219,10 +223,13 @@ function createChartSpaces(div, sectionName) {
             addOneSpace(
                 wrapper,
                 { text: chart.title },
-                filters[i].nofilter ? null : { id: id + "filter", icon: "fa fa-refresh" }
+                //filters[i].nofilter ? null : { id: `${id}-toggle`, icon: "fa fa-pie-chart" }
+                { id: `${id}-toggle`, icon: "fa fa-pie-chart" }
             ).append("div")
                 .attr("id", id);
 
+            d3.select(`#${id}-toggle`)
+                .attr("onclick", `toggleChart("${id}-toggle")`);   
             createTOC(id, chart.title, [backColor, textColor]);
         }
     }
@@ -235,7 +242,7 @@ function createChartSpaces(div, sectionName) {
         if (!title) title = sectionName
         let wrapper = d3.select(div)
             .append("div")
-            .attr("class", "grid450")
+            .attr("class", "w3-container")
         addOneSpace(
             wrapper,
             { id: id + "-title", text: title },

@@ -155,7 +155,7 @@ function syncMenusToFilter(sectionName) {
     for (const cat in filters) {
         let catIndex;
         const counts = params.sections[sectionName].sectiondata.counts;
-        for (const i in counts) 
+        for (const i in counts)
             if (counts[i].col == cat) {
                 catIndex = i;
                 break;
@@ -176,15 +176,19 @@ function syncMenusToFilter(sectionName) {
     }
 
 }
-// function showSlicer() {
-//     var x = document.getElementById("slicer");
-//     console.log("slicer", x);
-//     if (x.className.indexOf("w3-show") == -1) {
-//         x.className += " w3-show";
-//     } else {
-//         x.className = x.className.replace(" w3-show", "");
-//     }
-// }
+function toggleChart(id) {
+    const subStr = id.split("-");
+    let chart = params.sections[subStr[0]].sectiondata.charts[subStr[2]].chart;
+    params.sections[subStr[0]].sectiondata.charts[subStr[2]].chart = toggleBarDonut(chart);
+    //chart= toggleBarDonut(chart); // this does not work!
+    //toggle the button icon
+    const icon = d3.select("#" + id).select("i");
+    if (icon.attr("class") == "fa fa-pie-chart")
+        icon.attr("class", "fa fa-bar-chart")
+    else
+        icon.attr("class", "fa fa-pie-chart");
+}
+
 //bin: {values: [] bins: []} | "week" | "month" | "year"
 //sum|average: col >> if none then count, if both then sum
 //where bin: [[values],[categories]] | bindate: "week"|"month"|"year", if both then bin
