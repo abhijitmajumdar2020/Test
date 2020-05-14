@@ -45,12 +45,17 @@ html,
       stroke: red;
       /* stroke-width: '20'; */
   } 
-  .insightgrid {
+  .grid150 {
     display: grid;
     grid-gap: 1rem;
     padding: 1rem;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    /* grid-template-columns: repeat(4, 1fr); */
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+  .grid300 {
+    display: grid;
+    grid-gap: 1rem;
+    padding: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   }
   .loaderwrap {
     position: absolute;

@@ -1,19 +1,25 @@
 "use strict"
 function loadSection(sectionName) {
-    const $s = params.sections[sectionName];
+    if (sectionName && params.sections[sectionName])
+        sectionName = sectionName
+    else
+        sectionName = Object.keys(params.sections)[0];
+
     w3_close();
     d3.select("#loader").style("display", "block");
     d3.select("#footer").style("display", "none");
 
-    for (const key in params.sections)
+    for (const key in params.sections) {
         params.sections[key].data = [];
-
+        removeCharts(key);
+    }
+    const $s = params.sections[sectionName];
     d3.csv($s.datasource, function (row) {
         //make sure the values are trimmed
         for (let key in row)
             if (typeof row[key] === "string") row[key] = row[key].trim();
 
-        ///////////////////only required for demo
+        //fid dates //////////////////only required for demo
         row = fixDatesData(row);
         //create calculated columns
         if ($s.calculatedcols)
@@ -24,9 +30,11 @@ function loadSection(sectionName) {
         .then(data => {
             d3.select("#loader").style("display", "none");
             d3.select("#footer").style("display", "block");
+            initialiseCounter(sectionName);
             sortData($s.data, $s.charts.table.sortcols);
-            createChartSpaces("#main", sectionName);
             countRecs(sectionName);
+            createChartSpaces("#main", sectionName);
+            //countRecs(sectionName);
             addChartsToDivs(sectionName);
             params.currentsection = sectionName;
         });
@@ -64,6 +72,8 @@ function sortData(data, sortcols) {
     }
 }
 function initialiseCounter(sectionName) {
+    const $s = params.sections[sectionName];
+    //if ($s.sectiondata ) return;
     let $$ = new function () {
         this.charts = {};
         this.counts = {};
@@ -71,7 +81,7 @@ function initialiseCounter(sectionName) {
         this.totalRecs = 0;
         this.filteredRec = 0;
     };
-    const $s = params.sections[sectionName];
+
     $s.sectiondata = $$;
     $s.charts.bars.filters.forEach((e, i) => {
         if (!e.nofilter) $$.filters[e.col] = [];
@@ -85,16 +95,16 @@ function initialiseCounter(sectionName) {
         };
         $$.counts[i] = {
             col: e.col,
-            cats: [...e.values],
-            counts: [...e.values].fill(0),
-            sums: [...e.values].fill(0),
+            cats: e.values ? [...e.values] : [],
+            counts: e.values ? [...e.values].fill(0) : [],//,[...e.values].fill(0),
+            sums: e.values ? [...e.values].fill(0) : [],//,[...e.values].fill(0),[...e.values].fill(0),
             measure: e.measure,
             bin: e.bin,
         };
         if ($$.counts[i].bin == "auto") {
             $$.counts[i].bin = setAutoBins(sectionName, e.col);
             $$.counts[i].cats = [...$$.counts[i].bin.labels];
-            $$.counts[i].counts= [...$$.counts[i].cats].fill(0);
+            $$.counts[i].counts = [...$$.counts[i].cats].fill(0);
         }
     });
 }
@@ -108,13 +118,84 @@ function isFiltered(row, sectionName) {
     }
     return true;
 }
+function slicerSelect(id) {
+    const subStr = id.split("-"); // id = sectionName-filter-catIndex-valueIndex
+    const sectionName = subStr[0],
+        catIndex = subStr[2],
+        //cat = subStr[2],
+        parentId = subStr[0] + "-" + subStr[1] + "-" + subStr[2];
+    //let filter = params.sections[sectionName].sectiondata.filters[cat];
+    const cat = params.sections[sectionName].sectiondata.counts[catIndex].col;
+    let filter = params.sections[sectionName].sectiondata.filters[cat];
+    if (!filter) return;
+
+    let checked = d3.select("#" + parentId).selectAll(".fa-check-square-o");
+
+    const clickedItem = d3.select("#" + id).select("i");
+    //can unslect all but the last one
+    if (clickedItem.attr("class") == "fa fa-check-square-o" && checked.size() == 1) return;
+
+    if (clickedItem.attr("class") == "fa fa-check-square-o") {
+        clickedItem.attr("class", "fa fa-square-o");
+    } else {
+        clickedItem.attr("class", "fa fa-check-square-o");
+    }
+    const unCheckedItems = d3.select("#" + parentId).selectAll(".fa-square-o");
+    filter.length = 0;
+    if (unCheckedItems.size() > 0) {
+        let checkedItems = d3.select("#" + parentId).selectAll(".fa-check-square-o");
+        filter.length = 0;
+        for (const node of checkedItems.nodes())
+            filter.push(node.innerText.trim());
+    }
+    filterChanged(sectionName, true);
+}
+function syncMenusToFilter(sectionName) {
+    const filters = params.sections[sectionName].sectiondata.filters;
+    for (const cat in filters) {
+        let catIndex;
+        const counts = params.sections[sectionName].sectiondata.counts;
+        for (const i in counts)
+            if (counts[i].col == cat) {
+                catIndex = i;
+                break;
+            }
+        const id = sectionName + "-filtercol-" + catIndex;
+        const items = d3.select("#" + id).selectAll("a");
+
+        for (const node of items.nodes()) {
+            const value = node.innerText.trim();
+            const el = d3.select("#" + node.id).select("i");
+            if (filters[cat].length == 0)
+                el.attr("class", "fa fa-check-square-o")
+            else if (filters[cat].indexOf(value) != -1)
+                el.attr("class", "fa fa-check-square-o")
+            else
+                el.attr("class", "fa fa-square-o");
+        }
+    }
+
+}
+function toggleChart(id) {
+    const subStr = id.split("-");
+    let chart = params.sections[subStr[0]].sectiondata.charts[subStr[2]].chart;
+    params.sections[subStr[0]].sectiondata.charts[subStr[2]].chart = toggleBarDonut(chart);
+    //chart= toggleBarDonut(chart); // this does not work!
+    //toggle the button icon
+    const icon = d3.select("#" + id).select("i");
+    if (icon.attr("class") == "fa fa-pie-chart")
+        icon.attr("class", "fa fa-bar-chart")
+    else
+        icon.attr("class", "fa fa-pie-chart");
+}
+
 //bin: {values: [] bins: []} | "week" | "month" | "year"
 //sum|average: col >> if none then count, if both then sum
 //where bin: [[values],[categories]] | bindate: "week"|"month"|"year", if both then bin
 //instead of auto try numberX where x shows the precision 
 function setAutoBins(sectionName, col, noOfBins = 5) {
     const data = params.sections[sectionName].data;
-    var min = +data[0][col],
+    let min = +data[0][col],
         max = +data[0][col],
         sum = 0,
         count = 0;
@@ -138,15 +219,15 @@ function setAutoBins(sectionName, col, noOfBins = 5) {
 
 function getBinValue(bin, val) {
     const { bins, labels } = bin;
-    var ascending = bins[1] > bins[0];
-    for (var i = 0; i < bins.length; i++) {
+    let ascending = bins[1] > bins[0];
+    for (let i = 0; i < bins.length; i++) {
         if ((ascending && (val < bins[i])) || (!ascending && val > bins[i]))
             return labels[i];
     }
     return labels[labels.length - 1];
 }
 function dateDiff(start, end) {
-    var startDate = new Date(start),
+    let startDate = new Date(start),
         endDate = new Date(end);
     return Math.floor((endDate.getTime() - startDate.getTime()) / (24 * 3600 * 1000));
 }
@@ -157,14 +238,14 @@ function countRecs(sectionName) {
     $$.totalRecs = 0;
     $$.filteredRecs = 0;
 
-    var createTable = $s.charts.table != undefined;
+    let createTable = $s.charts.table != undefined;
 
     //zero the counters
     for (let entry in $$.counts) {
         $$.counts[entry].counts.fill(0);
         $$.counts[entry].sums.fill(0);
     }
-    
+
     for (let row of $s.data) {
         if (isActive(row, sectionName)) {
             $$.totalRecs++;
@@ -176,7 +257,7 @@ function countRecs(sectionName) {
                     const count = $$.counts[entry];
                     let cat = row[count.col];
                     if (count.bin) cat = getBinValue(count.bin, cat);
-                    
+
                     let index = count.cats.indexOf(cat);
                     if (index == -1) {
                         index = count.cats.push(cat) - 1;
@@ -191,16 +272,30 @@ function countRecs(sectionName) {
         }
     }
 }
-
+function removeCharts(sectionName) {
+    function removeChart(chart) {
+        if (chart) {
+            if (chart.internal.api)
+                chart = chart.destroy();
+            chart = null;
+        }
+    }
+    let $$ = params.sections[sectionName].sectiondata;
+    if ($$) {
+        for (let key in $$.charts)
+            removeChart($$.charts[key].chart);
+        removeChart($$.charts.trend.chart);
+    }
+}
 function addChartsToDivs(sectionName) {
     let $$ = params.sections[sectionName].sectiondata;
     const $s = params.sections[sectionName];
 
     for (let key in $$.charts) {
-            const count = $$.counts[key];
-            const data = [[...count.cats], [...count.sums]];
-            $$.charts[key].chart = c3BarChart(sectionName + "-chart-" + key, data, onclickFunction);
-            $$.charts[key].type = "filtered bars";
+        const count = $$.counts[key];
+        const data = [[...count.cats], [...count.sums]];
+        $$.charts[key].chart = c3BarChart(sectionName + "-chart-" + key, data, onclickFunction);
+        $$.charts[key].type = "filtered bars";
     }
     let trendData = createTrendData(sectionName);
     const i = $s.charts.bars.filters.length;
@@ -255,6 +350,7 @@ function resetFilter(sectionName) {
     filterChanged(sectionName, true);
 }
 function filterChanged(sectionName, recount) {
+    syncMenusToFilter(sectionName);
     if (recount) countRecs(sectionName);
     //create the filter message
     let $$ = params.sections[sectionName].sectiondata,
@@ -267,351 +363,16 @@ function filterChanged(sectionName, recount) {
             filterMessage = filterMessage + f + "=" + $$.filters[f].join("|");
         }
     }
-    var backColor = filterMessage == "" ? "white" : "lightgrey"; d3.selectAll("." + sectionName)
+    let backColor = filterMessage == "" ? "white" : "lightgrey"; d3.selectAll("." + sectionName)
         .style("background-color", backColor);
 
-    var filterBar = document.getElementById(sectionName + "-filter-values");
-    filterBar.innerHTML = filterMessage == "" ? "No filter" : "Filter: " + filterMessage;
-    var percentRecs = Math.floor(100 * $$.filteredRecs / $$.totalRecs);
+    let filterBar = document.getElementById(sectionName + "-filter-values");
+    filterBar.innerHTML = filterMessage == "" ? "Filter: None" : "Filter: " + filterMessage;
+    let percentRecs = Math.floor(100 * $$.filteredRecs / $$.totalRecs);
     refreshAllCharts(sectionName);
 }
 
-function createTrendData(sectionName) {
-    switch (params.sections[sectionName].charts.trend.type.style) {
-        case "test":
-            return createTrendDataTest(sectionName)
-        case "defect":
-            return createTrendDataDefect(sectionName)
-        case "story":
-            return createTrendDataStory(sectionName)
-        default:
-            return null
-    }
-}
-function createTrendDataStory(sectionName) {
-    let $$ = params.sections[sectionName].sectiondata;
-    const $s = params.sections[sectionName];
-    let cats = [];
-    const { start, end, type } = $s.charts.trend;
-    createDateArray(cats, addDays(start, -7), addDays(end, 14));
-    let ev = cats.slice().fill(0),
-        scope = ev.slice(),
-        forecast = ev.slice().fill(NaN),
-        plan = forecast.slice(),
-        scopeCount = 0,
-        totalStories = 0,
-        stroiesCompleted = 0,
-        stroriesWIP = 0;
-    const reportDateIndex = cats.indexOf(params.reportdate);
-    for (let row of $s.data) {
-        if (isFiltered(row, sectionName)) {
-            const history = row[type.history].split("|");
-            scopeCount += +row[type.storypoints];
-            totalStories++;
-            //the last status will indicate if the siry is complete or not
-            const laststatusEV = type.earnedvalue[history[history.length - 2]];
-            if (laststatusEV == 1)
-                stroiesCompleted++
-            else if (laststatusEV > 0)
-                stroriesWIP++;
-            var where = dateDiff(cats[0], history[1]);
-            if (where < cats.length) {
-                let prevEV = 0;
-                scope[where] += +row[type.storypoints];
-                for (let h = 2; h < history.length; h += 2) {
-                    where = dateDiff(cats[0], history[h + 1]);
-                    if (where < 0) where = 0;
-                    if (type.earnedvalue[history[h]]) {
-                        ev[where] += (+row[type.storypoints]) * (type.earnedvalue[history[h]] - prevEV);
-                        prevEV = type.earnedvalue[history[h]];
-                    }
-                    else
-                        console.log(h, history[h], type.earnedvalue[history[h]]);
-                }
-            }
-        }
-    }
-    for (var i = 1; i < ev.length; i++) {
-        if (i <= reportDateIndex) {
-            ev[i] += ev[i - 1];
-            scope[i] += scope[i - 1];
-        } else {
-            ev[i] = NaN;
-            scope[i] = NaN;
-        }
-    }
-    for (var i = 1; i < ev.length; i++) ev[i] = Math.round(ev[i], 0);
-    if (type.plan) {
-        let startPoint = cats.indexOf(start),
-            endPoint = cats.indexOf(end);
-        for (i = startPoint; i <= endPoint; i++)
-            plan[i] = Math.round(scopeCount * type.plan(i - startPoint, endPoint - startPoint));
-    }
-    else
-        plan = null;
-    //generate insights
-    //SPI = EV / PV = 14,400 / 18,000 = 0.8
-    let insights = [];
-    insights.push({
-        headline: stroiesCompleted,
-        message: `Stories Completed (${Math.round(100 * stroiesCompleted / totalStories)}%)`,
-        color: "none"
-    });
-    insights.push({
-        headline: stroriesWIP,
-        message: `Stories inflight (${Math.round(100 * stroriesWIP / totalStories)}%)`,
-        color: "none"
-    });
-    insights.push({
-        headline: totalStories - (stroiesCompleted + stroriesWIP),
-        message: `Stories yet to start (${Math.round(100 * (totalStories - (stroiesCompleted + stroriesWIP)) / totalStories)}%)`,
-        color: "none"
-    });
-    const spi = Math.round(100 * ev[reportDateIndex] / plan[reportDateIndex]);
-    insights.push({
-        headline: spi + "%",
-        message: "SPI",
-        color: spi >= 100 ? "green" : spi < 85 ? "red" : "orange"
-    });
-    insights.push({
-        headline: "TBD",
-        message: "Forecast end date",
-        color: "none"
-    });
 
-    generteInsight(insights);
-    return [cats, "EV", ev, "Scope", scope, "Plan", plan];
-}
-
-function createTrendDataTest(sectionName) {
-    let $$ = params.sections[sectionName].sectiondata;
-    const $s = params.sections[sectionName];
-    let cats = [],
-        passed = 0;
-    const { start, end, type } = $s.charts.trend;
-    createDateArray(cats, addDays(start, -7), addDays(end, 14));
-    let counts = cats.slice().fill(0),
-        scope = counts.slice(),
-        forecast = counts.slice().fill(NaN),
-        plan = forecast.slice(),
-        scopeCount = 0;
-    const reportDateIndex = cats.indexOf(params.reportdate);
-    const endDateIndex = cats.indexOf($s.charts.trend.end);
-    const exArray = $s.charts.trend.type.executed;
-    const passArray = $s.charts.trend.type.passed;
-
-    for (let row of $s.data) {
-        if (isFiltered(row, sectionName)) { // 
-            scopeCount++;
-            var where = dateDiff(cats[0], row[type.scope]);
-            scope[where]++;
-            var status = row[exArray[1]];
-            if (passArray.indexOf(status) != -1)
-                passed++;
-            if (exArray[2].indexOf(status) != -1) {
-                where = dateDiff(cats[0], row[exArray[0]]);
-                counts[where]++;
-            }
-        }
-    }
-    //calculate the forcast based on average for last seven days
-    var avExecution = 0;
-    for (var i = reportDateIndex; i > (reportDateIndex - 7); i--)
-        avExecution += counts[i];
-
-    avExecution = avExecution / 7;
-
-    for (var i = 1; i < counts.length; i++) {
-        if (i <= reportDateIndex) {
-            counts[i] += counts[i - 1];
-            scope[i] += scope[i - 1];
-        } else {
-            counts[i] = NaN;
-            scope[i] = NaN;
-        }
-    }
-    forecast[reportDateIndex] = counts[reportDateIndex];
-    for (var i = reportDateIndex + 1; i < counts.length; i++)
-        forecast[i] = forecast[i - 1] + avExecution;
-    for (var i = reportDateIndex + 1; i < counts.length; i++)
-        forecast[i] = Math.round(forecast[i]);
-    forecast[reportDateIndex] = NaN;
-
-    if (type.plan) {
-        let startPoint = cats.indexOf(start),
-            endPoint = cats.indexOf(end);
-        for (i = startPoint; i <= endPoint; i++)
-            plan[i] = Math.round(scopeCount * type.plan(i - startPoint, endPoint - startPoint));
-    }
-    else
-        plan = null;
-
-    let insights = [];
-    insights.push({
-        headline: Math.round((100 * passed / scopeCount)) + "%",
-        message: `Scripts passed (${passed} out of ${scopeCount})`,
-        color: "none"
-    })
-    insights.push({
-        headline: avExecution.toFixed(1),
-        message: "Current test execution rate",
-        color: "none"
-    })
-
-    const forecastedtestend = reportDateIndex - 1 + Math.round((plan[endDateIndex] - counts[reportDateIndex]) / avExecution)
-
-    const delay = forecastedtestend - endDateIndex - 1;
-
-    insights.push({
-        headline: niceDateFormat(addDays(cats[0], forecastedtestend)),
-        message: "Forecasted date for all scripts executed ("
-            + (delay == 0 ? "on" : (delay < 0 ? -delay + " days before" : delay + " days after"))
-            + ` test end of ${niceDateFormat(cats[endDateIndex])})`,
-        color: delay <= 0 ? "green" : delay / 7 <= 1 ? "orange" : "red"
-    })
-    const daystoend = endDateIndex - reportDateIndex - 1;
-    if (daystoend > 0) {
-        const requiredrate = (plan[endDateIndex] - counts[reportDateIndex]) / daystoend;
-        insights.push({
-            headline: requiredrate.toFixed(1),
-            message: "Required execution rate to meet end date",
-            color: "none"
-        })
-    } else {
-        insights.push({
-            headline: "Infinity",
-            message: "Required test execution rate cannot be decided",
-            color: "red"
-        })
-    }
-
-    generteInsight(insights);
-    return [cats, "Executed", counts, "Scope", scope, "Forecast", forecast, "Plan", plan];
-}
-
-function createTrendDataDefect(sectionName) {
-    const $s = params.sections[sectionName],
-        $$ = params.sections[sectionName].sectiondata;
-    //get the required data from the params
-    let { agefilter, type, start, end } = $s.charts.trend;
-
-    let ageBucketSet = $$.filters[agefilter];
-
-    let cats = [];
-    createDateArray(cats, addDays(start, -7), addDays(end, 14));
-    let counts = cats.slice().fill(0),
-        raised = counts.slice(),
-        resolved = counts.slice(),
-        forecast = counts.slice().fill(NaN);
-    const reportDateIndex = cats.indexOf(params.reportdate);
-    const endDateIndex = cats.indexOf($s.charts.trend.end);
-
-    for (let row of $s.data) {
-        if (isFiltered(row, sectionName)) {
-            var startDate = row[type.raised];
-            var endDate = row[type.resolved];
-            if (endDate == "") endDate = $s.charts.trend.end;
-            let arrayStart = dateDiff(cats[0], startDate);
-            let arrayEnd = dateDiff(cats[0], endDate);
-            for (var i = arrayStart; i < arrayEnd; i++)
-                if (ageBucketSet == null || ageBucketSet == getAgeBucket(startDate, cats[i])) {
-                    if (i >= 0 && i < counts.length)
-                        counts[i]++;
-                    if (i == arrayStart) raised[i]++;
-                    if (i == (arrayEnd - 1)) resolved[i]++;
-                }
-        }
-    }
-    for (var i = reportDateIndex + 1; i < counts.length; i++)
-        counts[i] = NaN;
-    //calculate the average for last seven days
-    var avRaised = 0,
-        avResolved = 0,
-        avOverDays = 7; // paramterise this <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    for (var i = reportDateIndex; i > (reportDateIndex - avOverDays); i--) {
-        avRaised += raised[i];
-        avResolved += resolved[i];
-    };
-    avRaised = Number((avRaised / avOverDays).toFixed(1));
-    avResolved = Number((avResolved / avOverDays).toFixed(1));
-    //add forecast after report date
-    forecast[reportDateIndex] = counts[reportDateIndex];
-
-    for (var i = reportDateIndex + 1; i < cats.length; i++) {
-        if (cats[i] <= end)
-            forecast[i] = forecast[i - 1] + avRaised - avResolved
-        else
-            forecast[i] = forecast[i - 1] - avResolved;
-    };
-    for (var i = reportDateIndex + 1; i < cats.length; i++)
-        forecast[i] = Math.max(0, Math.round(forecast[i]));
-
-    let zerodefectdate = 0;
-    if (forecast[forecast.length - 1] == 0) {
-        for (var i = forecast.length - 1; i > reportDateIndex + 1; i--) {
-            if (forecast[i] > 0) {
-                zerodefectdate = i + 2;
-                break;
-            }
-        };
-    }
-    else {
-        if (avResolved > 0)
-            zerodefectdate = forecast.length - 1 + Math.round(forecast[forecast.length - 1] / avResolved)
-        else
-            zerodefectdate = -1;
-    }
-    forecast[reportDateIndex] = NaN;
-    //generte the insights
-    let insights = [];
-    insights.push({
-        headline: counts[reportDateIndex],
-        message: "Current active defects",
-        color: "none"
-    })
-    insights.push({
-        headline: avResolved.toFixed(1),
-        message: `Current defect resolve rate. `
-            + `Current defect raise rate: ${avRaised.toFixed(1)}`,
-        color: "none"
-    })
-    if (zerodefectdate == -1) {
-        insights.push({
-            headline: "?",
-            message: "Cannot forecast zero defects date at current resolve rate",
-            color: "red"
-        })
-    }
-    else {
-        const delay = zerodefectdate - endDateIndex - 1;
-        insights.push({
-            headline: niceDateFormat(addDays(cats[0], zerodefectdate)),
-            message: "Forecasted date for no defects at current rate ("
-                + (delay == 0 ? "on" : (delay < 0 ? -delay + " days before" : delay + " days after"))
-                + ` test end of ${niceDateFormat(cats[endDateIndex])})`,
-            color: delay <= 0 ? "green" : delay / 7 <= 1 ? "orange" : "red"
-        })
-    }
-    if (zerodefectdate > endDateIndex) {
-        const daystoend = endDateIndex - reportDateIndex - 1;
-        if (daystoend > 0) {
-            const requiredrate = ((daystoend - 1) * avRaised + counts[reportDateIndex]) / daystoend;
-            insights.push({
-                headline: requiredrate.toFixed(1),
-                message: "Required defect resolve rate to meet end date",
-                color: "none"
-            })
-        } else {
-            insights.push({
-                headline: "Infinity",
-                message: "Required defect resolve rate to meet end date",
-                color: "red"
-            })
-        }
-    }
-    generteInsight(insights);
-    return [cats, "Count", counts, "Forecast", forecast];
-}
 function isActive(row, sectionName) {
     const include = params.sections[sectionName].charts.bars.include;
     if (include)
@@ -663,29 +424,6 @@ function getColor(sectionName, index = 0) {
 
 }
 function generteInsight(insights) {
-    //let maxheight = -1;
-    //for (let i = 0; i < Math.min(4, insights.length); i++) {
-    //    const div = d3.select("#insights-" + i);
-    //    if (!div) break;
-    //    div.html("");
-    //    div.style("text-align", "center");
-    //    div.append("p")
-    //        .attr("class", "w3-xxlarge")
-    //        .style("background-color", insights[i].color)
-    //        .text(insights[i].headline);
-    //    //div.append("br");
-    //    div.append("p")
-    //        .attr("class", "w3-tiny")
-    //        .text(insights[i].message);
-    //    maxheight = Math.max(maxheight, div.style("height").slice(0, -2)); //see note below
-    //}
-    ////////MUST BE A BETTER WAY TO SIZE ALL TH SAME HEIGHT
-    //for (let i = 0; i < Math.min(5, insights.length); i++) {
-    //    const div = d3.select("#insights-" + i);
-    //    if (!div) break;
-    //    div.style("height", maxheight + "px");
-    //}
-    let maxheight = -1;
     for (let i = 0; i < Math.min(4, insights.length); i++) {
         const div = d3.select("#insights-" + i);
         if (!div) break;
@@ -698,22 +436,13 @@ function generteInsight(insights) {
         div.append("p")
             .attr("class", "w3-xxlarge")
             .text(insights[i].headline);
-        //div.append("br");
         div.append("p")
             .attr("class", "w3-tiny")
             .text(insights[i].message);
-        maxheight = Math.max(maxheight, div.style("height").slice(0, -2)); //see note below
-    }
-    ////////MUST BE A BETTER WAY TO SIZE ALL TH SAME HEIGHT
-    for (let i = 0; i < Math.min(5, insights.length); i++) {
-        const div = d3.select("#insights-" + i);
-        if (!div) break;
-        div.style("height", maxheight + "px");
     }
 }
 function niceDateFormat(d) {
-    //Fri Apr 24 2020 19:35:08 GMT+0100 (BST)
-    const newdate = "" + new Date(d);
+    const newdate = "" + new Date(d); //format: Fri Apr 24 2020 19:35:08 GMT+0100 (BST)
     return newdate.slice(4, 10);
 }
 /////////////////FOLLOWING REQUIRED ONLY FOR DEMO.  MOVES ALL DATES AS IF REPORT DATE IS TODAY////////////
@@ -729,8 +458,6 @@ function fixDates() {
 function fixDatesData(row) {
     const daysToAdd = params["daysToAdd"];
     if (daysToAdd == 0) return;
-    //change all dates in data
-    //let data = params.sections[sectionName].data;
     let datastr = JSON.stringify(row);
     const datepattern = /[0-9]{4}-[0-9]{2}-[0-9]{2}/g; //pattern for date YYYY-MM-DD
     datastr = datastr.replace(datepattern, name => addDays(name, daysToAdd));
@@ -755,7 +482,7 @@ function traverse(x) {
         })
     }
     function traverseObject(o) {
-        for (var key in o)
+        for (let key in o)
             if (o.hasOwnProperty(key)) {
                 if ((typeof o[key] === 'string'))
                     o[key] = covertDate(o[key])

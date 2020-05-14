@@ -31,7 +31,7 @@ function addToTable(sNo, row, sectionName) {
             .enter()
             .append("th")
             .text(d => d + (d == sortcols[0] ? " " : ""))
-            .attr("onclick", (d => "sortTable('" + sectionName + "','" + d + "')"))
+            .attr("onclick", (d => `sortTable('${sectionName}','${d}')`))
             .attr("cursor", "pointer")
             .append("i")
             .attr("class", d => (d == sortcols[0] ? sortcols[1] == 1 ? "fa fa-toggle-down" : "fa fa-toggle-up" : ""));
@@ -47,25 +47,33 @@ function addToTable(sNo, row, sectionName) {
 
 }
 function createChartSpaces(div, sectionName) {
-    let rowInDiv;
-    function addNewRow(parentDiv) {
-        rowInDiv = d3.select(parentDiv)
-            .append('div')
-            .attr("class", "w3-row-padding");
+    function addOneSpace(parent, title, button) {
+        //title = {text: "title", id: "x"}
+        //button = {icon: "font awsome", id: "y"}
+        let wrapper = parent.append('div')
+            .attr("class", `w3-container w3-card-2 ${sectionName}`);
+        if (title) {
+            let panel = wrapper.append("div")
+                .attr("class", "w3-panel")
+                .style("padding", 0);
+            let titleDiv = panel.append("div")
+                .attr("class", "w3-left  chart-title") //w3-padding
+                .text(title.text);
+            if (title.id)
+                titleDiv.attr("id", title.id);
+            if (button) {
+                panel.append("button")
+                    .attr("class", "w3-right w3-btn w3-white w3-border") //w3-padding
+                    .attr("id", button.id)
+                    .append("i")
+                    .attr("class", button.icon);
+            }
+        }
+        return wrapper;
     }
-    function addToRow(numberInRow) {
-        const classtype = ["w3-col", "w3-half", "w3-third", "w3-quarter"][numberInRow - 1];
-        if (!classtype) return;
-        if (!rowInDiv) addNewRow();
-        if (rowInDiv.selectAll(sectionName).nodes().length >= numberInRow) addNewRow();
-        return rowInDiv.append('div')
-            .attr("class", classtype)//[numberInRow - 1])
-            .append('div')
-            .attr("class", "w3-container w3-margin-bottom" + " " + sectionName);
-    }
+
     let $s = params.sections[sectionName];
     if ($s.charts === undefined) return;
-    initialiseCounter(sectionName);
     const backColor = getColor(sectionName),
         textColor = "#fff";
     //remove divs if any
@@ -77,163 +85,188 @@ function createChartSpaces(div, sectionName) {
     //set the TOC for other sections before current section
     d3.select('#menuDivId').append('a')
         .attr("class", "w3-bar-item w3-padding")
+        //.style({"font-weight":"bold", "border-bottom": "1px solid"})
         .style("font-weight", "bold")
         .style("border-bottom", "1px solid")
-        .text("Contents");
-    //d3.select('#menuDivId').append('hr').style("color","black");
+        .text("Book Marks");
 
     for (const s in params.sections) {
         const item = d3.select('#menuDivId').append('a')
             .style("font-weight", "bold")
+            .attr("class", "w3-bar-item w3-padding")
             .text(params.sections[s].title);
         if (s == sectionName)
-            item.attr("class", "w3-bar-item w3-padding")
-                .append('div')
+            item.append('div')
                 .attr("id", "detailMenu")
         else
-            item.attr("class", "w3-bar-item w3-button w3-padding")
+            item.classed("w3-button", true)
                 .attr('onclick', "loadSection('" + s + "')");
     }
     /////////////////////////////////////////////////////////////////////////////////// section title
     let title = !$s.title ? sectionName : $s.title;
     d3.select("#main-title")
-        .text(title + " Dashboard (" + niceDateFormat(params.reportdate) + ")")
-    // d3.select(div).append("br")
-    //createTOC(id, title, ["#fff", backColor]);// textColor]);
+        .text(`${title} Dashboard (${niceDateFormat(params.reportdate)})`)
+
     ////////////////////////////////////////////////////////////////////////////////// trend
     const filters = $s.charts.bars.filters;
     if ($s.charts.trend) {
         let id = sectionName + "-chart-" + filters.length; //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         ///////////////////////////////////////////////////////////////////////////////////inights
-
-        //addNewRow(div);
-
-        const insights = d3.select(div)
+        let insights = d3.select(div)
             .append("div")
-            .attr("class", "insightgrid");
+            .attr("class", "grid150");
         for (let i = 0; i < 4; i++) {
-            //addToRow(4)
-            insights.append("div")
-                .attr("class", "w3-container" + " " + sectionName)
+            addOneSpace(insights)
                 .attr("id", "insights-" + i);
-            //.attr("class", sectionName);
-            //.node().classList.add(sectionName)
         }
-        createTOC("insights-0", title + " Insights", [backColor, textColor]);
+        createTOC("insights-0", "Insights", [backColor, textColor]);
+        //////////////////////////////////////////////////////////replace with slicer
+        {
+            let id = sectionName + "-filter-values";
+            let filterdiv = d3.select(div)
+                .append("div")
+                .attr("class", "w3-container");
+            //.attr("class", "grid300");
+            let wrapper = filterdiv//d3.select(div)
+                .append("div").style("padding-bottom", "10px")
+                //.append("div").attr("class", "w3-container")
+                .append("div").attr("class", "w3-bar w3-white w3-card-2")
+                .append("div").attr("class", "w3-bar-item")
+                .attr("id", id)
+                .text("Filter: None");
+            {
+                // <div class="w3-bar w3-card-2">
+                //     <a href="#" class="w3-bar-item w3-button">Home</a>
+                //     <a href="#" class="w3-bar-item w3-button">Link 1</a>
+                //     <div class="w3-dropdown-hover">
+                //          <button class="w3-button">Dropdown</button>
+                //          <div class="w3-dropdown-content w3-bar-block w3-card-4">
+                //              <a href="#" class="w3-bar-item w3-button">Link 1</a>
+                //              <a href="#" class="w3-bar-item w3-button">Link 2</a>
+                //              <a href="#" class="w3-bar-item w3-button">Link 3</a>
+                //          </div>
+                //     </div>
+                // </div>
+                let wrapper = filterdiv//d3.select(div)
+                    .append("div")
+                    //.attr("class", "w3-container")
+                    .append("div")
+                    .attr("class", "w3-bar w3-white w3-card-2");
+                wrapper.append("a")
+                    .attr("href", "#")
+                    .attr("class", "w3-bar-item")
+                    //.attr("id", filterId)
+                    //.attr("onclick", `slicerSelect("${filterId}")`)
+                    .append("i").attr("class", "fa fa-filter");
+
+                const count = $s.sectiondata.counts;
+                const filter = $s.sectiondata.filters;
+                for (const key in count)
+                    if (filter[count[key].col]) {
+                        //const id = `${sectionName}-filtercol-${count[key].col}`; //avoid .col how about key?  
+                        const id = `${sectionName}-filtercol-${key}`; //avoid .col how about key?  
+                        const x = wrapper.append("div")
+                            .attr("class", "w3-dropdown-hover");
+                        x.append("button")
+                            .attr("class", "w3-button")
+                            //.attr("id", id)
+                            .text(count[key].col);
+                        const y = x.append("div")
+                            .attr("id", id)
+                            .attr("class", "w3-dropdown-content w3-bar-block w3-card-2");
+                        count[key].cats.forEach((element, i) => {
+                            //const filterId = `${id}-${element}`; ////avoid .col how about index number
+                            const filterId = `${id}-${i}`; ////avoid .col how about index number
+                            y.append("a")
+                                .attr("href", "#")
+                                .attr("class", "w3-bar-item w3-button")
+                                .attr("id", filterId)
+                                .attr("onclick", `slicerSelect("${filterId}")`)
+                                .append("i").attr("class", "fa fa-check-square-o")
+                                .text(" " + element)
+
+                        });
+                    }
+                wrapper.append("a")
+                    .attr("href", "#")
+                    .attr("class", "w3-bar-item")
+                    //.attr("id", filterId)
+                    .attr("onclick", `resetFilter("${sectionName}")`)
+                    .append("i").attr("class", "fa fa-refresh")
+
+            }
+        }
         ///////////////////////////////////////////////////////////////////////////////trend chart
         title = !$s.charts.trend.title ? sectionName : $s.charts.trend.title;
-        addNewRow(div);
-        let wrapper = addToRow(2)
-        wrapper.append("div")
-            .attr("class", "chart-title")
-            .text(title);
-        wrapper.append('div')
-            .attr("class", "mychart")
+        let wrapper = d3.select(div)
+            .append("div")
+            .attr("class", "grid300")
+
+        addOneSpace(wrapper, { text: title })
+            .append("div")
             .attr("id", id);
+
+        wrapper.append("div"); //force an extra div to halve the display
         createTOC(id, title, [backColor, textColor]);
     }
     ////////////////////////////////////////////////////////////////////////////////// filtered bars
     //$s.charts.bars) // must exist
     title = !$s.charts.bars.title ? sectionName : $s.charts.bars.title;
+    {
+        let wrapper = d3.select(div)
+            .append("div")
+            .attr("class", "grid300")
+        for (var i = 0; i < filters.length; i++) {
+            let chart = $s.sectiondata.charts[i];
+            chart.index = i;
+            let id = sectionName + '-chart-' + i;
+            addOneSpace(
+                wrapper,
+                { text: chart.title },
+                //filters[i].nofilter ? null : { id: `${id}-toggle`, icon: "fa fa-pie-chart" }
+                { id: `${id}-toggle`, icon: "fa fa-pie-chart" }
+            ).append("div")
+                .attr("id", id);
 
-    addNewRow(div);
-    for (var i = 0; i < filters.length; i++) {
-        let chart = $s.sectiondata.charts[i];
-        chart.index = i;
-        let id = sectionName + '-chart-' + i;
-        const wrapper = addToRow(3);
-        let charttitle = wrapper.append("div")
-            .attr("class", "chart-title")
-            .text(chart.title + " ");
-        if (!filters[i].nofilter)
-            charttitle.append("i")
-                .attr("class", "fa fa-filter");
-
-        wrapper.append('div')
-            .attr("class", "mychart")
-            .attr("id", id);
-
-        createTOC(id, chart.title, [backColor, textColor]);
+            d3.select(`#${id}-toggle`)
+                .attr("onclick", `toggleChart("${id}-toggle")`);   
+            createTOC(id, chart.title, [backColor, textColor]);
+        }
     }
-    //////////////////////////////////////////////////////////replace with slicer
-    let id = sectionName + "-filter-values";
-    createOneBar(div, backColor, textColor, title, true)
-        .style('cursor', 'pointer')
-        .attr('onclick', 'resetFilter("' + sectionName + '")')
-        .attr('id', id);
 
     ////////////////////////////////////////////////////////////////////////////////// table
     if ($s.charts.table) {
-        // let newDiv = document.createElement('div');
-        id = sectionName + "-table";
+
+        let id = sectionName + "-table";
         title = $s.charts.table.title
         if (!title) title = sectionName
-        d3.select(div).append('br');
-        createChartTitle(sectionName, div, id + "-title", "table-button")
-            .append('div')
+        let wrapper = d3.select(div)
+            .append("div")
+            .attr("class", "w3-container")
+        addOneSpace(
+            wrapper,
+            { id: id + "-title", text: title },
+            { id: "table-button", icon: "fa fa-file-excel-o" }
+        ).append('div')
             .attr("class", "w3-responsive")
             .append('table')
             .attr("class", "w3-table-all")
             .attr("id", id);
 
         d3.select("#table-button")
-            .attr("onclick", "copyTable('" + id + "')")
-            .append("i")
-            .attr("class", "fa fa-file-excel-o");
-
-        // wrapper.append("div")
-        //     // .attr("class", "w3-container w3-margin-bottom")
-        //     // .append('div')
-        //     .attr("class", "w3-responsive")
-        //     .append('table')
-        //     .attr("class", "w3-table-all")
-        //     .attr("id", id);
+            .attr("onclick", `copyTable('${id}')`);
 
         createTOC(id, title, [backColor, textColor]);
     }
-}
-function createChartTitle(sectionName, parentDiv, id1, id2) {
-    // const html = '<table border="0" width="100%">'
-    //     + '<tr class="chart-title>'
-    //     + '<td width="99%">Title</td>'
-    //     + '<td width="1%" align="right">button</td>'
-    //     + '</tr>'
-    //     + '</table>';
-    let wrapper = d3.select(parentDiv)
-        .append('div')
-        .attr("class", "w3-container w3-margin-bottom")
-        .append('div')
-        .attr("class", "w3-container x3-card-4 w3-padding-4 " + sectionName);
-    let title = wrapper.append("div")
-        .attr("class", "chart-title");
-    //title.append('div').html(html);
-    title.append("p")
-        .attr("id", id1)
-        .style("float", "left")
-        .text(title);
-
-    if (id2 !== undefined) {
-        title.append("button")
-            .style("float", "right")
-            .attr("class", "w3-button")
-            .attr("id", id2);
-        //.attr("onclick", "copyTable('" + id + "')")
-        //.append("i")
-        //.attr("class", buttonIcon);
-    }
-    title.append("div")
-        .style("clear", "both");
-    return wrapper;
+    countRecs(sectionName);
 }
 
 function createTOC(divId, title, colors = ["#fff", 0]) {
     d3.select('#detailMenu').append('a')
         .attr("class", "w3-bar-item w3-button w3-padding")
-        //.style("background-color", colors[0] + "80")
         .style("color", colors[0])
-        //.style("border-left-style", "solid") 
         .style("font-weight", "normal")
-        .attr('onclick', "actionTOC('" + divId + "')")
+        .attr('onclick', `actionTOC('${divId}')`)
         .text(title);
 }
 function actionTOC(chartDiv) {
@@ -242,19 +275,19 @@ function actionTOC(chartDiv) {
     w3_close();
 }
 
-function createOneBar(div, backColor, textColor, title, hidden = false) {
-    //d3.select(div).append('br');
-    let outDiv = d3.select(div)
-        .append('div')
-        .attr("class", "w3-container");
-    if (hidden)
-        outDiv = outDiv.append('div').attr("class", "w3-grey");
-    return outDiv.append('div')
-        .attr("class", "w3-container w3-center w3-padding")
-        .style("white-space", "nowrap")
-        .style("height", "40px")
-        .style("width", "100%")
-        .style("background-color", backColor)
-        .style("color", textColor)
-        .text(title);
-}
+// function createOneBar(div, backColor, textColor, title, hidden = false) {
+//     //d3.select(div).append('br');
+//     let outDiv = d3.select(div)
+//         .append('div')
+//         .attr("class", "w3-container");
+//     if (hidden)
+//         outDiv = outDiv.append('div').attr("class", "w3-grey");
+//     return outDiv.append('div')
+//         .attr("class", "w3-container w3-center w3-padding")
+//         .style("white-space", "nowrap")
+//         .style("height", "40px")
+//         .style("width", "100%")
+//         .style("background-color", backColor)
+//         .style("color", textColor)
+//         .text(title);
+// }
