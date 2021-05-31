@@ -48,7 +48,10 @@
         var delta = 0;
         var toggleColon = ":";
         function selectTime(t) {
-            delta += t;
+            if (t == 0)
+                delta = 0
+            else
+                delta += t;
             showAllTimes();
         }
         function crtaeteClocks() {
