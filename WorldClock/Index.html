@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>TMOAC</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3pro.css"> -->
+</head>
+
+<body>
+    <style>
+        body {
+          font-family: 'Verdana';
+          padding: 5%;
+        }
+        button {
+            font-size: 32px;
+        }
+    </style>
+    <!-- <script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script> -->
+    <div class="w3-container">
+        <h1 id="MyClockDisplay">World Clock</h1>
+        <p id="timenow"></p>
+        <div>
+            <button type="button" onclick="selectTime(15)">+</button>
+            <button type="button" onclick="selectTime(-15)">-</button>
+            <button type="button" onclick="selectTime(0)">0</button>
+        </div>
+        <br>
+            <table id="xxx">
+
+            </table>
+        </div>
+    </div>
+      
+    <script>
+        var clocks = [
+            {place:"Sydney", offset: 10, forward: "Oct 1 Sun", backward: "Apr 1 Sun"},
+            {place:"Manila", offset:8},
+            {place:"Bangalore", offset:5.5},
+            {place:"London", offset:1, forward: "Apr last Sun", backward: "Oct last Sun"},
+            {place:"New York", offset:-4, forward: "Mar 2 Sun", backward: "Nov 2 Sun"},
+            {place:"San Fransisco", offset:-7, forward: "Mar 2 Sun", backward: "Nov 2 Sun"},
+            {place:"Honolulu", offset:-10}
+        ];
+        var mousedown = false; 
+        var delta = 0;
+        var toggleColon = ":";
+        function selectTime(t) {
+            delta += t;
+            showAllTimes();
+        }
+        function crtaeteClocks() {
+            for (var i = 0; i < clocks.length; i++) { 
+                var table = document.getElementById("xxx");
+                var row = table.insertRow();
+                var clockname = row.insertCell();
+                clockname.innerHTML = clocks[i].place;
+                var clockvalue = row.insertCell();
+                clockvalue.innerHTML = "yyy";
+                clockvalue.setAttribute("id",clocks[i].place)
+
+            }
+        }
+        
+        function showTime(clock){
+            var date = new Date();
+            var currentDay = date.toString();
+            document.getElementById("timenow").innerHTML = currentDay;
+
+            date.setMinutes(date.getUTCMinutes() + date.getTimezoneOffset())//  comvert date time to UTC
+            date.setMinutes(date.getUTCMinutes() + (60 * clock.offset))//  comvert date time to the
+            if (delta != 0) {
+                var mm = date.getMinutes();
+                mm = 15 * Math.round(mm/15); //round to nearest 15 mins
+                date.setMinutes(mm + delta);//  Math.trunc(offset)); // 0 - 23
+            }
+            
+            const theEl = document.getElementById(clock.place);
+            time = date.toString().substr(16,5);//+toggleColon+date.toString().substr(19,2);
+            if (date.toString().substr(0,3) != currentDay.substr(0,3))
+                time = time + " " + date.toString().substr(0,3);
+            theEl.innerText = time;
+            theEl.textContent = time;
+            var h = date.getHours();
+            if (h >= 9 && h <= 18) // worktime
+                theEl.style.color = "black";
+            else
+                if (h >= 21 || h <= 5) // sleeptime
+                    theEl.style.color = "red";
+                else // nonworktimr
+                    theEl.style.color = "blue";
+            
+            
+        }
+        function showAllTimes(){
+            for (var i = 0; i < clocks.length; i++) { 
+                if (toggleColon == ":")
+                    toggleColon = " ";
+                else
+                    toggleColon = ":";
+            
+                showTime(clocks[i]);
+            }
+            setTimeout(showAllTimes, 1000);
+        }
+        crtaeteClocks();
+        showAllTimes();
+        
+    </script>
+</body>
+
+</html>
