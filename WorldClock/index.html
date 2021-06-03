@@ -15,78 +15,102 @@
           padding: 5%;
         }
         button {
-            font-size: 32px;
+            font-family: 'Verdana';
+            font-size: 24px;
         }
     </style>
-    <!-- <script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script> -->
-    <div class="w3-container">
+    
+    <div>
         <h1 id="MyClockDisplay">World Clock</h1>
         <p id="timenow"></p>
         <div>
-            <button type="button" onclick="selectTime(15)">+</button>
-            <button type="button" onclick="selectTime(-15)">-</button>
-            <button type="button" onclick="selectTime(0)">0</button>
+            <button type="button" onclick="selectTime(1)">+</button>
+            <button type="button" onclick="selectTime(-1)">-</button>
+            <button type="button" style="display: none;" id="reset" onclick="selectTime(0)">0</button>
         </div>
         <br>
             <table id="xxx">
 
             </table>
         </div>
+        <br>
+        <button id="deltastep" type="button" onclick="changedelta()">Delta: minutes</button>
     </div>
       
     <script>
         var clocks = [
-            {place:"Sydney", offset: 10, forward: "Oct 1 Sun", backward: "Apr 1 Sun"},
-            {place:"Manila", offset:8},
-            {place:"Bangalore", offset:5.5},
-            {place:"London", offset:1, forward: "Apr last Sun", backward: "Oct last Sun"},
-            {place:"New York", offset:-4, forward: "Mar 2 Sun", backward: "Nov 2 Sun"},
-            {place:"San Fransisco", offset:-7, forward: "Mar 2 Sun", backward: "Nov 2 Sun"},
-            {place:"Honolulu", offset:-10}
+            {place:"Sydney", offset: 10, tz: 'Australia/Sydney'},
+            {place:"Manila", offset:8, tz: 'Asia/Manila'},
+            {place:"Bangalore", offset:5.5, tz: 'Asia/Kolkata'},
+            {place:"London", offset:1, tz: 'Europe/London'},
+            {place:"New York", offset:-4, tz: 'America/New_York'},
+            {place:"San Fransisco", offset:-7, tz: 'America/Los_Angeles'},
+            {place:"Honolulu", offset:-10, tz: 'Pacific/Honolulu'}
         ];
         var mousedown = false; 
+        var currentDayTime;
         var delta = 0;
-        var toggleColon = ":";
+        var deltaStep = 15;
+
+        function changedelta(){
+            const el = document.getElementById("deltastep");
+            if (deltaStep == 15) {
+                deltaStep = 24*60;
+                el.innerHTML="Delta: days";
+            }
+            else {
+                deltaStep = 15;
+                el.innerHTML="Delta: minutes";
+            }
+        }
+
         function selectTime(t) {
-            if (t == 0)
-                delta = 0
-            else
-                delta += t;
+            const el = document.getElementById("reset");
+            if (t == 0) {
+                delta = 0;
+                el.style.display = "none";
+            } else {
+                delta += t * deltaStep;
+                el.style.display = "inline";
+            }
             showAllTimes();
         }
-        function crtaeteClocks() {
-            for (var i = 0; i < clocks.length; i++) { 
-                var table = document.getElementById("xxx");
-                var row = table.insertRow();
-                var clockname = row.insertCell();
-                clockname.innerHTML = clocks[i].place;
-                var clockvalue = row.insertCell();
-                clockvalue.innerHTML = "yyy";
-                clockvalue.setAttribute("id",clocks[i].place)
 
-            }
+        function createClocks() {
+            clocks.forEach(
+                v=> {
+                    var table = document.getElementById("xxx");
+                    var row = table.insertRow();
+                    row.insertCell().innerHTML = v.place;
+                    row.insertCell().setAttribute("id",v.place);
+                }
+            )
         }
         
         function showTime(clock){
-            var date = new Date();
-            var currentDay = date.toString();
-            document.getElementById("timenow").innerHTML = currentDay;
+            const options = {hour: "2-digit", minute: "2-digit", second: "2-digit",weekday: 'short', year: 'numeric', month: 'short', day: '2-digit'}
 
-            date.setMinutes(date.getUTCMinutes() + date.getTimezoneOffset())//  comvert date time to UTC
-            date.setMinutes(date.getUTCMinutes() + (60 * clock.offset))//  comvert date time to the
+            var date = new Date();
+            const currentDayTime = date.toLocaleString('en-GB', {...options, timeZoneName: "long"});
+            document.getElementById("timenow").innerHTML = currentDayTime;
+
+    
             if (delta != 0) {
-                var mm = date.getMinutes();
+                var mm = date.getMinutes() + delta;
                 mm = 15 * Math.round(mm/15); //round to nearest 15 mins
-                date.setMinutes(mm + delta);//  Math.trunc(offset)); // 0 - 23
+                date.setMinutes(mm);//  Math.trunc(offset)); // 0 - 23
             }
             
             const theEl = document.getElementById(clock.place);
-            time = date.toString().substr(16,5);//+toggleColon+date.toString().substr(19,2);
-            if (date.toString().substr(0,3) != currentDay.substr(0,3))
-                time = time + " " + date.toString().substr(0,3);
-            theEl.innerText = time;
-            theEl.textContent = time;
-            var h = date.getHours();
+            const placeDayTime = date.toLocaleString('en-GB', {...options, timeZone: clock.tz});
+            const placeDay = placeDayTime.substr(0,16);
+            const placeTime = placeDayTime.substr(18,8);
+            const h = placeTime.substr(0,2);
+            if (currentDayTime.substr(0,16) != placeDay)
+                theEl.innerHTML  = placeTime + " " + placeDay
+            else
+                theEl.innerHTML  = placeTime;
+
             if (h >= 9 && h <= 18) // worktime
                 theEl.style.color = "black";
             else
@@ -98,17 +122,10 @@
             
         }
         function showAllTimes(){
-            for (var i = 0; i < clocks.length; i++) { 
-                if (toggleColon == ":")
-                    toggleColon = " ";
-                else
-                    toggleColon = ":";
-            
-                showTime(clocks[i]);
-            }
+            clocks.forEach(v=>showTime(v)); 
             setTimeout(showAllTimes, 1000);
         }
-        crtaeteClocks();
+        createClocks();
         showAllTimes();
         
     </script>
