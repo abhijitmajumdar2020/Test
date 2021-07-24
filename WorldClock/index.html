@@ -8,7 +8,7 @@
     <!-- <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3pro.css"> -->
 </head>
 
-<body>
+<body onpagehide="stopTimer()", onpageshow="startTimer()">
     <style>
         body {
           font-family: 'Verdana';
@@ -18,15 +18,80 @@
             font-family: 'Verdana';
             font-size: 24px;
         }
+        /* .marks {
+            transform: translate(20px, 20px);
+            stroke-width: 0.2;
+            }
+            .marks > line:nth-child(1) {
+            transform: rotate(30deg); 
+            }
+            .marks > line:nth-child(2) {
+            transform: rotate(calc(2 * 30deg));
+            }
+            .marks > line:nth-child(3) {
+            transform: rotate(calc(3 * 30deg));
+            stroke-width: 0.5;
+            }
+            .marks > line:nth-child(4) {
+            transform: rotate(calc(4 * 30deg));
+            }
+            .marks > line:nth-child(5) {
+            transform: rotate(calc(5 * 30deg));
+            }
+            .marks > line:nth-child(6) {
+            transform: rotate(calc(6 * 30deg));
+            stroke-width: 0.5;
+            }
+            .marks > line:nth-child(7) {
+            transform: rotate(calc(7 * 30deg));
+            }
+            .marks > line:nth-child(8) {
+            transform: rotate(calc(8 * 30deg));
+            }
+            .marks > line:nth-child(9) {
+            transform: rotate(calc(9 * 30deg));
+            stroke-width: 0.5;
+            }
+            .marks > line:nth-child(10) {
+            transform: rotate(calc(10 * 30deg));
+            }
+            .marks > line:nth-child(11) {
+            transform: rotate(calc(11 * 30deg));
+            }
+            .marks > line:nth-child(12) {
+            transform: rotate(calc(12 * 30deg));
+            stroke-width: 0.5;
+        } */
+        
     </style>
     
     <div>
         <h1 id="MyClockDisplay">World Clock</h1>
         <p id="timenow"></p>
+        <div id="analog clock">
+            <!-- <svg width="100" height="100">
+                <circle cx="50" cy="50" r="40" stroke="black" stroke-width="4" fill="white" />
+                <g class="marks" stroke="black" stroke-width="4">
+                    <line x1="30" y1="50" x2="20" y2="50" /> 
+                    <line x1="90" y1="50" x2="80" y2="50" />
+                    <line x1="15" y1="0" x2="16" y2="0" />
+                    <line x1="15" y1="0" x2="16" y2="0" />
+                    <line x1="15" y1="0" x2="16" y2="0" />
+                    <line x1="15" y1="0" x2="16" y2="0" />
+                    <line x1="15" y1="0" x2="16" y2="0" />
+                    <line x1="15" y1="0" x2="16" y2="0" />
+                    <line x1="15" y1="0" x2="16" y2="0" />
+                    <line x1="15" y1="0" x2="16" y2="0" />
+                    <line x1="15" y1="0" x2="16" y2="0" />
+                    <line x1="15" y1="0" x2="16" y2="0" />
+                </g>
+                Sorry, your browser does not support inline SVG.
+            </svg>  -->
+        </div>
         <div>
             <button type="button" onclick="selectTime(1)">+</button>
             <button type="button" onclick="selectTime(-1)">-</button>
-            <button type="button" style="display: none;" id="reset" onclick="selectTime(0)">0</button>
+            <button type="button" style="display: none;" id="reset" onclick="selectTime(0)">&#8635;</button>
         </div>
         <br>
             <table id="xxx">
@@ -34,100 +99,198 @@
             </table>
         </div>
         <br>
-        <button id="deltastep" type="button" onclick="changedelta()">Delta: minutes</button>
+        <button id="deltastep" type="button" onclick="changedelta()">?</button>
     </div>
       
     <script>
-        var clocks = [
-            {place:"Sydney", offset: 10, tz: 'Australia/Sydney'},
-            {place:"Manila", offset:8, tz: 'Asia/Manila'},
-            {place:"Bangalore", offset:5.5, tz: 'Asia/Kolkata'},
-            {place:"London", offset:1, tz: 'Europe/London'},
-            {place:"New York", offset:-4, tz: 'America/New_York'},
-            {place:"San Fransisco", offset:-7, tz: 'America/Los_Angeles'},
-            {place:"Honolulu", offset:-10, tz: 'Pacific/Honolulu'}
-        ];
-        var mousedown = false; 
-        var currentDayTime;
-        var delta = 0;
-        var deltaStep = 15;
-
-        function changedelta(){
-            const el = document.getElementById("deltastep");
-            if (deltaStep == 15) {
-                deltaStep = 24*60;
-                el.innerHTML="Delta: days";
+        //(function (){
+            var clocks = [
+                {place:"Sydney", tz: 'Australia/Sydney'},
+                {place:"Manila", tz: 'Asia/Manila'},
+                {place:"Bangalore", tz: 'Asia/Kolkata'},
+                {place:"London", tz: 'Europe/London'},
+                {place:"New York", tz: 'America/New_York'},
+                {place:"San Fransisco", tz: 'America/Los_Angeles'},
+                {place:"Honolulu", tz: 'Pacific/Honolulu'}
+            ];
+            var mousedown = false; 
+            var currentDayTime;
+            var delta = 0;
+            var deltaStep = 15;
+            var timer;
+            const options = {
+                hour: "2-digit", 
+                minute: "2-digit", 
+                second: "2-digit",
+                weekday: 'short', 
+                year: 'numeric', 
+                month: 'short', 
+                day: '2-digit'
             }
-            else {
-                deltaStep = 15;
-                el.innerHTML="Delta: minutes";
-            }
-        }
 
-        function selectTime(t) {
-            const el = document.getElementById("reset");
-            if (t == 0) {
-                delta = 0;
-                el.style.display = "none";
-            } else {
-                delta += t * deltaStep;
-                el.style.display = "inline";
-            }
-            showAllTimes();
-        }
-
-        function createClocks() {
-            clocks.forEach(
-                v=> {
-                    var table = document.getElementById("xxx");
-                    var row = table.insertRow();
-                    row.insertCell().innerHTML = v.place;
-                    row.insertCell().setAttribute("id",v.place);
+            function changedelta(){
+                const el = document.getElementById("deltastep");
+                const delta = "\u0394: ";
+                switch(deltaStep) {
+                    case 15:
+                        deltaStep = 60;
+                        el.textContent = delta + "Hour";
+                        break;
+                    case 60:
+                        deltaStep = 24*60;
+                        el.textContent = delta + "Day";
+                        break;
+                    case 24*60:
+                        deltaStep = 15;
+                        el.textContent = delta + "15 Min";
+                        break;
+                    default:
+                        deltaStep = 60;
+                        el.textContent = delta + "Hour";
                 }
-            )
-        }
-        
-        function showTime(clock){
-            const options = {hour: "2-digit", minute: "2-digit", second: "2-digit",weekday: 'short', year: 'numeric', month: 'short', day: '2-digit'}
+            }
 
-            var date = new Date();
-            const currentDayTime = date.toLocaleString('en-GB', {...options, timeZoneName: "long"});
-            document.getElementById("timenow").innerHTML = currentDayTime;
+            function selectTime(t) {
+                const el = document.getElementById("reset");
+                if (t == 0) {
+                    delta = 0;
+                    el.style.display = "none";
+                } else {
+                    delta += t * deltaStep;
+                    el.style.display = "inline";
+                }
+                showAllTimes();
+            }
 
-    
-            if (delta != 0) {
-                var mm = date.getMinutes() + delta;
-                mm = 15 * Math.round(mm/15); //round to nearest 15 mins
-                date.setMinutes(mm);//  Math.trunc(offset)); // 0 - 23
+            function createClocks() {
+                clocks.forEach(
+                    v=> {
+                        var table = document.getElementById("xxx");
+                        var row = table.insertRow();
+                        row.insertCell().textContent = v.place;
+                        row.insertCell().setAttribute("id",v.place);
+                    }
+                )
             }
             
-            const theEl = document.getElementById(clock.place);
-            const placeDayTime = date.toLocaleString('en-GB', {...options, timeZone: clock.tz});
-            const placeDay = placeDayTime.substr(0,16);
-            const placeTime = placeDayTime.substr(18,8);
-            const h = placeTime.substr(0,2);
-            if (currentDayTime.substr(0,16) != placeDay)
-                theEl.innerHTML  = placeTime + " " + placeDay
-            else
-                theEl.innerHTML  = placeTime;
+            function showTime(clock, date){
 
-            if (h >= 9 && h <= 18) // worktime
-                theEl.style.color = "black";
-            else
-                if (h >= 21 || h <= 5) // sleeptime
-                    theEl.style.color = "red";
-                else // nonworktimr
-                    theEl.style.color = "blue";
-            
-            
-        }
-        function showAllTimes(){
-            clocks.forEach(v=>showTime(v)); 
-            setTimeout(showAllTimes, 1000);
-        }
-        createClocks();
-        showAllTimes();
-        
+                const currentDayTime = document.getElementById("timenow").textContent;
+                
+                const theEl = document.getElementById(clock.place);
+                const placeDayTime = date.toLocaleString('en-GB', {...options, timeZone: clock.tz});
+                const placeDay = placeDayTime.substr(0,16);
+                var placeTime;
+                
+                
+                //bold if place = home
+                if (currentDayTime.substr(18,5) == placeDayTime.substr(18,5)) {
+                    //theEl.style.fontWeight = "bold";
+                    placeTime = placeDayTime.substr(18,8);
+                } else {
+                    //theEl.style.fontWeight = "normal";
+                    placeTime = placeDayTime.substr(18,5);
+                }
+                if (currentDayTime.substr(0,16) != placeDay)
+                    theEl.textContent  = placeTime + " " + placeDay
+                else
+                    theEl.textContent  = placeTime;
+
+                const h = placeTime.substr(0,2);
+                //theEl.style.fontWeight = "lighter";
+                if (h >= 9 && h <= 18) {// worktime
+                    theEl.style.color = "black";
+                    //theEl.style.fontWeight = "normal";
+                } else
+                    if (h >= 21 || h <= 5) // sleeptime
+                        theEl.style.color = "red";
+                    else // non work time 
+                        theEl.style.color = "blue";
+            }
+            function stopTimer(){
+                clearInterval(timer);
+                console.log("stopped ", Date.now());
+            }
+            function startTimer() {
+                showAllTimes();
+                timer = setInterval(showAllTimes, 1000);
+                console.log("started ", Date.now());
+            }
+            function showAllTimes(){
+                var date = new Date();
+                const currentDayTime = date.toLocaleString('en-GB', {...options, timeZoneName: "long"});
+                document.getElementById("timenow").textContent = currentDayTime;
+                if (delta != 0) {
+                    var mm = date.getMinutes() + delta;
+                    mm = 15 * Math.round(mm/15); //round to nearest 15 mins
+                    date.setMinutes(mm);
+                }
+                clocks.forEach(v=>showTime(v, date)); 
+            }
+            function aclock() {
+                function sa(element, attrs) {
+                    for(var key in attrs) {
+                        element.setAttribute(key, attrs[key]);
+                    }
+                }
+                const size = 100;
+                const w3svg = "http://www.w3.org/2000/svg";
+                const e = document.getElementById("analog clock");
+                const svg = document.createElementNS(w3svg, 'svg');
+                svg.style.width = size;
+                svg.style.height = size;
+                
+                const clockface = document.createElementNS(w3svg, 'circle');
+                clockface.setAttribute("cx", size/2);
+                clockface.setAttribute("cy", size/2);
+                clockface.setAttribute("r", .8 * size/2);
+                clockface.setAttribute("stroke", "black");
+                clockface.setAttribute("stroke-width", 4);
+                clockface.setAttribute("fill", "white");
+                //stroke="black" stroke-width="4"
+                svg.appendChild(clockface);
+                //create the 12, 3, 6 and 9 marks
+                const ticks = document.createElementNS(w3svg, 'g');
+                sa(ticks, {
+                        "stroke":  "black",
+                        "stroke-width": 4
+                    })
+                
+                for (var i = 0; i < 12; i++) {
+                    const tick = document.createElementNS(w3svg, 'line');
+                    
+                    sa(tick, {
+                        "x1": size/2, 
+                        "y1": 15, 
+                        "x2": size/2,
+                        "y2": 20,
+                        //"stroke":  "red",
+                        //"stroke-width": 4,
+                        "transform": `rotate(${360*i/12} ${size/2} ${size/2})`
+                    })
+                    
+                    ticks.appendChild(tick);
+                }
+                svg.appendChild(ticks);
+
+                const hour = document.createElementNS(w3svg, 'line');
+                hour.setAttribute("x1", size/2);
+                hour.setAttribute("y1", 25);
+                hour.setAttribute("x2", size/2);
+                hour.setAttribute("y2", size/2);
+                hour.setAttribute("stroke", "black");
+                hour.setAttribute("stroke-width", 4);
+                //hour.setAttribute("transform", "rotate(90,"+size/2+","+size/2+")");
+                hour.setAttribute("transform", `rotate(${360*7/12} ${size/2} ${size/2})`);
+                hour.classList.add("hour");
+                svg.appendChild(hour);
+                e.appendChild(svg);
+                console.log("svg created")
+            }
+            changedelta();
+            createClocks(); 
+            //aclock();
+        //})()
     </script>
 </body>
 
