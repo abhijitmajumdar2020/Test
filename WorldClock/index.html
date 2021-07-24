@@ -68,26 +68,6 @@
     <div>
         <h1 id="MyClockDisplay">World Clock</h1>
         <p id="timenow"></p>
-        <div id="analog clock">
-            <!-- <svg width="100" height="100">
-                <circle cx="50" cy="50" r="40" stroke="black" stroke-width="4" fill="white" />
-                <g class="marks" stroke="black" stroke-width="4">
-                    <line x1="30" y1="50" x2="20" y2="50" /> 
-                    <line x1="90" y1="50" x2="80" y2="50" />
-                    <line x1="15" y1="0" x2="16" y2="0" />
-                    <line x1="15" y1="0" x2="16" y2="0" />
-                    <line x1="15" y1="0" x2="16" y2="0" />
-                    <line x1="15" y1="0" x2="16" y2="0" />
-                    <line x1="15" y1="0" x2="16" y2="0" />
-                    <line x1="15" y1="0" x2="16" y2="0" />
-                    <line x1="15" y1="0" x2="16" y2="0" />
-                    <line x1="15" y1="0" x2="16" y2="0" />
-                    <line x1="15" y1="0" x2="16" y2="0" />
-                    <line x1="15" y1="0" x2="16" y2="0" />
-                </g>
-                Sorry, your browser does not support inline SVG.
-            </svg>  -->
-        </div>
         <div>
             <button type="button" onclick="selectTime(1)">+</button>
             <button type="button" onclick="selectTime(-1)">-</button>
@@ -227,69 +207,8 @@
                 }
                 clocks.forEach(v=>showTime(v, date)); 
             }
-            function aclock() {
-                function sa(element, attrs) {
-                    for(var key in attrs) {
-                        element.setAttribute(key, attrs[key]);
-                    }
-                }
-                const size = 100;
-                const w3svg = "http://www.w3.org/2000/svg";
-                const e = document.getElementById("analog clock");
-                const svg = document.createElementNS(w3svg, 'svg');
-                svg.style.width = size;
-                svg.style.height = size;
-                
-                const clockface = document.createElementNS(w3svg, 'circle');
-                clockface.setAttribute("cx", size/2);
-                clockface.setAttribute("cy", size/2);
-                clockface.setAttribute("r", .8 * size/2);
-                clockface.setAttribute("stroke", "black");
-                clockface.setAttribute("stroke-width", 4);
-                clockface.setAttribute("fill", "white");
-                //stroke="black" stroke-width="4"
-                svg.appendChild(clockface);
-                //create the 12, 3, 6 and 9 marks
-                const ticks = document.createElementNS(w3svg, 'g');
-                sa(ticks, {
-                        "stroke":  "black",
-                        "stroke-width": 4
-                    })
-                
-                for (var i = 0; i < 12; i++) {
-                    const tick = document.createElementNS(w3svg, 'line');
-                    
-                    sa(tick, {
-                        "x1": size/2, 
-                        "y1": 15, 
-                        "x2": size/2,
-                        "y2": 20,
-                        //"stroke":  "red",
-                        //"stroke-width": 4,
-                        "transform": `rotate(${360*i/12} ${size/2} ${size/2})`
-                    })
-                    
-                    ticks.appendChild(tick);
-                }
-                svg.appendChild(ticks);
-
-                const hour = document.createElementNS(w3svg, 'line');
-                hour.setAttribute("x1", size/2);
-                hour.setAttribute("y1", 25);
-                hour.setAttribute("x2", size/2);
-                hour.setAttribute("y2", size/2);
-                hour.setAttribute("stroke", "black");
-                hour.setAttribute("stroke-width", 4);
-                //hour.setAttribute("transform", "rotate(90,"+size/2+","+size/2+")");
-                hour.setAttribute("transform", `rotate(${360*7/12} ${size/2} ${size/2})`);
-                hour.classList.add("hour");
-                svg.appendChild(hour);
-                e.appendChild(svg);
-                console.log("svg created")
-            }
             changedelta();
             createClocks(); 
-            //aclock();
         //})()
     </script>
 </body>
