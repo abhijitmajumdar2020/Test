@@ -26,7 +26,8 @@
         <div>
             <button type="button" onclick="selectTime(1)">+</button>
             <button type="button" onclick="selectTime(-1)">-</button>
-            <button type="button" style="display: none;" id="reset" onclick="selectTime(0)">&#8635;</button>
+            <button type="button" disabled id="reset" onclick="selectTime(0)">&#8635;</button>
+            <button id="deltastep" type="button" onclick="changedelta()">?</button>
         </div>
         <br>
             <table id="xxx">
@@ -34,7 +35,6 @@
             </table>
         </div>
         <br>
-        <button id="deltastep" type="button" onclick="changedelta()">?</button>
     </div>
       
     <script>
@@ -89,10 +89,10 @@
                 const el = document.getElementById("reset");
                 if (t == 0) {
                     delta = 0;
-                    el.style.display = "none";
+                    el.disabled = true; 
                 } else {
                     delta += t * deltaStep;
-                    el.style.display = "inline";
+                    el.disabled = false;
                 }
                 showAllTimes();
             }
