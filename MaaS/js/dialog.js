@@ -44,7 +44,7 @@ function closeLayouDialog(apply) {
     const reportTitle = getElementValue(layoutDialog, "#maintitle")
     const reportDate = getElementValue(layoutDialog, "#dataasof")
     const sequence = getElementValue(layoutDialog, "#sequence")
-    
+
     if (reportTitle.trim() == "") {
         alert('Report title cannot be blank')
         layoutDialog.close()
@@ -61,7 +61,7 @@ function closeLayouDialog(apply) {
 
     $p.setConfig({ reportTitle, reportDate })
     $p.setChartSequence(sequence.split(","))
-    
+
     layoutDialog.close()
     reCreateCharts()
 }
@@ -123,7 +123,7 @@ function isValidArray(arrayValue, typeToCheck, maxValue, noDuplicates) {
     return entriesValid
 }
 //////////////////////////////////////////////////////////////////// config dialog
-function modifyChart() {//function chartConfigIconClicked(chartID) {
+function showConfigDialog() {//function chartConfigIconClicked(chartID) {
     function upateElement(selector, value) {
         const element = configDialog.querySelector(selector)
         element.value = value
@@ -173,7 +173,9 @@ async function closeConfigDialog(apply) {
     }
 
     const configDialog = document.querySelector('#configDialog')
-    const chartKey = $is.getCookie("dialog")
+    //const chartKey = $is.getCookie("dialog")
+    const chartID = $is.getCookie("dialog")
+    const key = chartID.replace('CHART_', '')
     const title = getElementValue('#chartTitle')
 
     if (!apply) {
@@ -206,10 +208,10 @@ async function closeConfigDialog(apply) {
     }
     else
         newCol.bins = undefined
-
-    configDialog.close()
-    if ($p.setColProperties(chartKey, newCol)) reCreateCharts()
-    document.getElementById("CHART_" + chartKey).scrollIntoView(false)
+    
+    configDialog.close(title, type, countType, colOver, order)
+    if ($p.setColProperties(key, newCol)) reCreateCharts()
+    document.getElementById("CHART_" + key).scrollIntoView(false)
 }
 
 /////////////////////////////////////////////////////////////////////// filter dialog
@@ -286,134 +288,3 @@ async function closeFilterDialog(apply) {
     checkBoxes.innerHTML = ""
     filterDialog.close()
 }
-//////////////////////////////////////////////////////
-
-{/* <div id="list">
-    <div class="draggable">A</div>
-    <div class="draggable">B</div>
-    <div class="draggable">C</div>
-    <div class="draggable">D</div>
-    <div class="draggable">E</div>
-</div> 
-
-.draggable {
-    cursor: move;
-    user-select: none;
-}*/}
-
-// The current dragging item
-let draggingEle;
-
-// The current position of mouse relative to the dragging element
-let x = 0;
-let y = 0;
-
-const mouseDownHandler = function (e) {
-    draggingEle = e.target;
-
-    // Calculate the mouse position
-    const rect = draggingEle.getBoundingClientRect();
-    x = e.pageX - rect.left;
-    y = e.pageY - rect.top;
-
-    // Attach the listeners to `document`
-    document.addEventListener('mousemove', mouseMoveHandler);
-    document.addEventListener('mouseup', mouseUpHandler);
-};
-
-const mouseUpHandler = function () {
-    // Remove the position styles
-    draggingEle.style.removeProperty('top');
-    draggingEle.style.removeProperty('left');
-    draggingEle.style.removeProperty('position');
-
-    x = null;
-    y = null;
-    draggingEle = null;
-
-    // Remove the handlers of `mousemove` and `mouseup`
-    document.removeEventListener('mousemove', mouseMoveHandler);
-    document.removeEventListener('mouseup', mouseUpHandler);
-
-    const draggingRect = draggingEle.getBoundingClientRect();
-
-    if (!isDraggingStarted) {
-        // Update the flag
-        isDraggingStarted = true;
-
-        // Let the placeholder take the height of dragging element
-        // So the next element won't move up
-        placeholder = document.createElement('div');
-        placeholder.classList.add('placeholder');
-        draggingEle.parentNode.insertBefore(
-            placeholder,
-            draggingEle.nextSibling
-        );
-
-        // Set the placeholder's height
-        placeholder.style.height = `${draggingRect.height}px`;
-    }
-
-    // Remove the placeholder
-    placeholder && placeholder.parentNode.removeChild(placeholder);
-    // Reset the flag
-    isDraggingStarted = false;
-
-
-}
-
-const isAbove = function (nodeA, nodeB) {
-    // Get the bounding rectangle of nodes
-    const rectA = nodeA.getBoundingClientRect();
-    const rectB = nodeB.getBoundingClientRect();
-
-    return rectA.top + rectA.height / 2 < rectB.top + rectB.height / 2;
-}
-
-const mouseMoveHandler = function (e) {
-
-    // Set position for dragging element
-    draggingEle.style.position = 'absolute';
-    draggingEle.style.top = `${e.pageY - y}px`;
-    draggingEle.style.left = `${e.pageX - x}px`;
-
-    // The current order:
-    // prevEle
-    // draggingEle
-    // placeholder
-    // nextEle
-    const prevEle = draggingEle.previousElementSibling;
-    const nextEle = placeholder.nextElementSibling;
-
-    // User moves item to the top
-    if (prevEle && isAbove(draggingEle, prevEle)) {
-        // The current order    -> The new order
-        // prevEle              -> placeholder
-        // draggingEle          -> draggingEle
-        // placeholder          -> prevEle
-        swap(placeholder, draggingEle);
-        swap(placeholder, prevEle);
-        return;
-    }
-
-    // User moves the dragging element to the bottom
-    if (nextEle && isAbove(nextEle, draggingEle)) {
-        // The current order    -> The new order
-        // draggingEle          -> nextEle
-        // placeholder          -> placeholder
-        // nextEle              -> draggingEle
-        swap(nextEle, placeholder);
-        swap(nextEle, draggingEle);
-    }
-}
-
-const swap = function (nodeA, nodeB) {
-    const parentA = nodeA.parentNode;
-    const siblingA = nodeA.nextSibling === nodeB ? nodeA : nodeA.nextSibling;
-
-    // Move `nodeA` to before the `nodeB`
-    nodeB.parentNode.insertBefore(nodeA, nodeB);
-
-    // Move `nodeB` to before the sibling of `nodeA`
-    parentA.insertBefore(nodeB, siblingA);
-};

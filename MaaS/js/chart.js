@@ -321,3 +321,18 @@ function updateHeatMapChart(chart, col, data, labels) {
         }, true
     );
 }
+//////////////////////////////////////////////////// trends
+//open close is add for each open and subtract for each close for that date
+//need startdate for start of chart. now-start greater than 30 then weekly else daily 
+//need a start number (default 0)
+//plan straightline, sigmoid, plan-points  and target number
+//
+//forecast using x past data points and x% tolerance (10% assumed)
+
+function createTrendOpenCloseChart(id, col, data, labels, clickCallback, risk){
+
+}
+
+function updateTrendOpenCloseChart() {
+
+}
