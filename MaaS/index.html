@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Metrics-as-a-Service</title>
+    <meta name="description" content="Metrics for IT Projects">
+    <meta name="keywords" content="Metrics, Project, Program, Goverrance">
+    <meta name="author" content="Abhijit Majumdar">
+
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="icon" href="images/favicon.ico?v=M44lzPylqQ" />
+    <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon" />
+
+    <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
+    <link rel="manifest" href="images/site.webmanifest">
+    <link rel="mask-icon" href="images/safari-pinned-tab.svg" color="#5bbad5">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="theme-color" content="#ffffff">
+
+    <!-- <link rel="icon" type="image/x-icon" href="images/favicon.ico"/> -->
+
+
+    <link rel="stylesheet" href="./css/main.css">
+    <link rel="stylesheet" href="./css/print.css">
+    <!-- <link rel="stylesheet" href="./css/W3.css"> -->
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300&display=swap" rel="stylesheet">
+
+    <script src="./js/main.js" charset="utf-8"></script>
+    <script src="./js/param.js" charset="utf-8"></script>
+    <script src="./js/papaparse.js" charset="utf-8"></script>
+    <script src="./js/chart.js" charset="utf-8"></script>
+    <script src="./js/dialog.js" charset="utf-8"></script>
+    <script src="./js/store.js" charset="utf-8"></script>
+    <script src="./js/logger.js" charset="utf-8"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+</head>
+
+<body>
+    <dialog id="selectChartOptions">
+        <button class="w3-button" style="display: block;" onclick="processChartOption('filter')">Filler chart</button>
+        <button class="w3-button" style="display: block;" onclick="processChartOption('modify')">Modify chart</button>
+        <button class="w3-button" style="display: block;" onclick="processChartOption('remove')">Remove chart</button>
+        <button class="w3-button" style="display: block;" onclick="processChartOption('clone')">Clone chart</button>
+        <button class="w3-button" style="display: block;" onclick="processChartOption('layout')">Modify layout</button>
+        <button class="w3-button" style="display: block;" onclick="processChartOption('close')">Close</button>
+    </dialog>
+    <dialog id="layoutDialog">
+        <legend>Config the layout</legend>
+        <br><br>
+        <label for="maintitle">Main title: </label>
+        <input type="text" id="maintitle">
+        <br><br>
+        <label for="dataasof">Data as of: </label>
+        <input type="date" id="dataasof">
+        <br><br>
+        <label for="sequence">Chart sequence: </label>
+        <input type="text" id="sequence">
+        <br><br>
+        <button onclick="closeLayouDialog(false)" class="w3-button">Cancel</button>
+        <button id="apply" onclick="closeLayouDialog(true)" class="w3-button">Apply</button>
+    </dialog>
+    <dialog id="configDialog">
+
+        <fieldset>
+            <legend>Config the chart</legend>
+            <label for="chartTitle">Chart Title: </label>
+            <input type="text" id="chartTitle" value="chartTitle">
+            <br><br>
+            <label for="type">Choose a type: </label>
+            <select name="type" id="type">
+                <option>YYYY</option>
+                <option>MMM-YY</option>
+                <option>MMM</option>
+                <option>DDD</option>
+                <option>Number</option>
+                <option>String</option>
+                <option>Risk</option>
+            </select>
+            <br><br>
+            <label for="buckets">Buckets: </label>
+            <input type="text" id="buckets">
+            <br><br>
+            <label for="countType">Choose a count type: </label>
+            <select name="countType" id="countType">
+                <option>Count</option>
+                <option>Average</option>
+                <option>Sum</option>
+            </select>
+            <br>
+            <label for="colOver">Average/Sum over: </label>
+            <select name="colOver" id="colOver">
+                <option>AGE</option>
+            </select>
+            <br><br>
+            <label for="order">Sort order: </label>
+            <input type="text" id="order">
+            <br><br>
+
+        </fieldset>
+        <button onclick="closeConfigDialog(false)" class="w3-button">Cancel</button>
+        <button id="apply" onclick="closeConfigDialog(true)" class="w3-button">Apply</button>
+    </dialog>
+
+    <dialog id="filterDialog">
+        <fieldset>
+            <legend>Select values to filter</legend>
+            <div id="checkBoxes">
+
+            </div>
+        </fieldset>
+        <br>
+        <button onclick="closeFilterDialog(false)" class="w3-button">Cancel</button>
+        <button id="apply" onclick="closeFilterDialog(true)" class="w3-button">Apply</button>
+    </dialog>
+    <input type="file" class="w3-input label" name="file" id="file" style='display:none;' accept=".csv"
+        onchange="loadNewFile()">
+
+    <div class="w3-container">
+        <div class="label noprint">
+            <button class="w3-button" onclick="menu('loadconfig')"><s>Load Cofig</s></button>
+            <button class="w3-button" onclick="menu('loaddata')">Load Data</button>
+            <button class="w3-button" onclick="menu('load2data')"><s>Load Secondary Data</s></button>
+            <button class="w3-button" onclick="menu('saveconfig')"><s>Save Config</s></button>
+            <button class="w3-button" onclick="menu('layout')">Modify layout</button>
+            <button class="w3-button" onclick="menu('printPDF')">Print PDF</button>
+        </div>
+        <div id="reportTitles">
+            <h1 id="mainTitle">No file loaded</h1>
+            <h4 id="subTitle"></h4>
+        </div>
+        <div class="printonly">
+            <h4>Table of Content</h4>
+            <div id="toc">
+            </div>
+        </div>
+        <!-- <div class="noprint">
+            <input type="file" class="w3-input label" name="file" id="file" style='display:none;' accept=".csv" onchange="loadNewFile()">
+        </div> -->
+        <br>
+        <div id="filter-value" class="label"></div>
+        <br>
+        <div class="page-break"></div>
+        <br>
+        <div class="chart-container" id="wrapper">
+
+        </div>
+
+        <footer>
+            <p>Copyright &#169; May 2023 Abhijit Majumdar</p>
+            <p>Powered by HTML5, CSS3, JS,
+                <!-- </a><img src="icons/html5.svg" style= "opacity: 50%;" width="15"><a>, </a>
+                <img src="icons/css3-alt.svg" style= "opacity: 50%;" width="15"><a>, </a>
+                <img src="icons/js.svg" style= "opacity: 50%;" width="15"><a>, </a> -->
+                <a href="https://www.papaparse.com" target="_blank">papaparse</a><a>, </a>
+                <a href="https://apexcharts.com" target="_blank">apexchart</a>
+                <a> and lot of elbow graese</a>
+            </p>
+            <p>Version beta WIP. Tested on Safari (16.5) and Chrome (81.0) on Macbook, Safari on iPhone X</p>
+        </footer>
+    </div>
+</body>
+<script>
+    let chartList = []///remove globals
+
+    async function loadNewFile() {
+        const files = document.querySelector('#file').files;
+        if (files.length > 0) {
+            clearCounts()
+            destroyAllCharts()
+            await countNow(files[0], undefined, false)
+
+        } else {
+            alert("Please select a file.")
+        }
+    }
+    async function countNow(file, filter, update = true) {
+        const allCounts = await $c.processCSVFile(file, filter)
+        saveCounts(allCounts)
+        if (update)
+            updateCharts()
+        else
+            showCharts()
+        showFilters()
+    }
+    //merge the follwoing two with param as {} for the firstone
+    function clearCounts() {
+        saveCounts({})//localStorage.setItem("allCounts", JSON.stringify({}))
+    }
+    function saveCounts(x) {
+        localStorage.setItem("allCounts", JSON.stringify(x))
+    }
+    function getCounts() {
+        return JSON.parse(localStorage.getItem("allCounts"))
+    }
+
+    function showFilters() {
+
+        const isMember = "=", isNotMember = "\u2260"
+        const allCounts = getCounts()
+        const filterValueDiv = document.querySelector('#filter-value')
+        let filterValue = "Filters: None"
+        for (const [key, value] of Object.entries(allCounts)) {
+            let filteredCounts = { excluded: [], included: [] }
+            for (const [k, v] of Object.entries(allCounts[key])) {
+                if (v.include)
+                    filteredCounts.included.push(k)
+                else
+                    filteredCounts.excluded.push(k)
+            }
+
+            if (filteredCounts.excluded.length > 0) {
+                if (filterValue == "Filters: None") filterValue = "Filters: "
+                filterValue += chartList[Number(key)].title
+                if (filteredCounts.included.length <= filteredCounts.excluded.length)
+                    filterValue += " " + isMember + " [" + filteredCounts.included.join(", ") + "] "
+                else
+                    filterValue += " " + isNotMember + " [" + filteredCounts.excluded.join(", ") + "] "
+            }
+        }
+        filterValueDiv.innerHTML = filterValue//JSON.stringify(allCounts)
+
+    }
+    function getChartId(id) {
+        return "CHART_" + id.replace(" ", "_").toUpperCase()
+    }
+    function destroyAllCharts() {
+        chartList.forEach(v =>
+            v.chart.destroy()
+        )
+        chartList = []
+    }
+
+    function showCharts() {
+        const mainTitle = document.getElementById("mainTitle")
+        const { reportDate, reportTitle } = $p.getConfig()
+        mainTitle.textContent = reportTitle
+        const subTitle = document.getElementById("subTitle")
+        subTitle.textContent = "Data as of: " + reportDate
+        //destroyAllCharts()
+        var allCounts = getCounts()
+        const wrapper = document.querySelector('#wrapper')
+        const toc = document.querySelector('#toc')
+        wrapper.innerHTML = ""
+        toc.innerHTML = ""
+
+        for (const [key, value] of Object.entries(allCounts)) {
+            const newDiv = document.createElement("div")
+            //newDiv.setAttribute("id", key)
+            newDiv.setAttribute("class", "chart")
+            const chartDiv = document.createElement("div")
+
+            const canvas = document.createElement("div")
+            const id = getChartId(key)
+            canvas.setAttribute("id", id)
+
+            chartDiv.appendChild(canvas)
+            newDiv.appendChild(chartDiv)
+            wrapper.appendChild(newDiv)
+
+            const col = $p.getColProperties(key)
+            const chartTitle = Number(key) + 1 + ". " + col.title
+            const tocEntry = document.createElement("a")
+            tocEntry.textContent = chartTitle
+            tocEntry.setAttribute("href", "#" + key)
+            toc.appendChild(tocEntry)
+            toc.appendChild(document.createElement("br"))
+
+            //create the data for the chart...
+            const chartData = $p.transformDataAndLabels(key, allCounts[key])
+            //... create the chart
+            chartList.push(
+                {
+                    id: id,
+                    //title: chartTitle, //Number(key) + 1 + ". " + $p.getColProperties(key).title,
+                    chart: drawChart(id, $p.getColProperties(key), chartData.data, chartData.labels, chartClick),
+                }
+            )
+        }
+    }
+    async function chartClick(chart, category) {
+        let allCounts = getCounts()
+        if (category == null) {
+            console.log("select filter")
+            return
+        }
+
+        for (const [key, value] of Object.entries(allCounts)) {
+            if (chart == getChartId(key)) {
+                for (const [k, v] of Object.entries(allCounts[key]))
+                    if (k != category)
+                        v.include = !v.include
+
+                const files = document.querySelector('#file').files;
+                await countNow(files[0], allCounts)
+                break
+            }
+        }
+    }
+    async function chartResetFilter(chart) {
+
+        let allCounts = getCounts()
+
+        for (const [key, value] of Object.entries(allCounts)) {
+            if (chart == getChartId(key)) {
+                for (const [k, v] of Object.entries(allCounts[key]))
+                    v.include = true
+
+                const files = document.querySelector('#file').files;
+                await countNow(files[0], allCounts)
+                break
+            }
+        }
+    }
+
+    function updateCharts() {
+        var allCounts = getCounts()
+        for (const [key, value] of Object.entries(allCounts)) {
+            //console.log("update", key, value)
+            //prepare the data for chart
+            const chartData = $p.transformDataAndLabels(key, value)
+            //get the chart ...
+            const id = getChartId(key)
+
+            const entry = chartList.find((v) => {
+                if (v.id == id) return v.chart
+            })
+            //... and update it
+            updateChart(entry.chart, $p.getColProperties(key), chartData.data, chartData.labels)
+        }
+    }
+    function processChartOption(action) {
+        const selectChartOptions = document.getElementById("selectChartOptions")
+
+        if (action == "close") {
+            selectChartOptions.close()
+            return
+        }
+        if (action == "remove") {
+            selectChartOptions.close()
+            removeChart()
+            return
+        }
+        if (action == "clone") {
+            selectChartOptions.close()
+            cloneChart()
+            return
+        }
+        if (action == "filter") {
+            selectChartOptions.close()
+            filterChart()
+            return
+        }
+        if (action == "modify") {
+            selectChartOptions.close()
+            modifyChart()
+            return
+        }
+        selectChartOptions.close()
+        console.log(action)
+    }
+
+    function menu(action) {
+        if (action == "printPDF") {
+            window.print()
+            return
+        }
+        if (action == "loaddata") {
+            const fileInput = document.getElementById('file')
+            fileInput.click()
+            return
+        }
+        if (action == "layout") {
+            showLayoutDialog()
+            return
+        }
+        console.log(action)
+        alert("Not yet implemented")
+    }
+
+</script>
+
+</html>

@@ -1,0 +1,235 @@
+:root {
+    --main-bg-color: #dceaf4;
+    ;
+}
+
+body {
+    font-family: 'Raleway', sans-serif;
+    /* font-family: Tahoma, Verdana, sans-serif; */
+    margin: 0;
+    font-size: 15px;
+    line-height: 1
+}
+
+.filter,
+.button {
+    background-color: #3498DB;
+    color: white;
+    padding: 16px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+}
+
+.filter:hover,
+.filter:focus {
+    background-color: #2980B9;
+}
+
+.filter {
+    position: relative;
+    display: inline-block;
+}
+
+.filter-content {
+    display: none;
+    position: absolute;
+    background-color: #f1f1f1;
+    min-width: 160px;
+    overflow: auto;
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+}
+
+.filter-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+.filter a:hover {
+    background-color: #ddd;
+}
+
+.show {
+    display: block;
+}
+
+.printonly {
+    display: none;
+}
+
+/* --------------------------------------- */
+* {
+    box-sizing: border-box;
+}
+
+@media all {
+    .page-break {
+        display: none;
+    }
+}
+
+@media (min-width: 600px) {
+    .chart-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .sp2 {
+        grid-column: span 2;
+    }
+
+    .sp3 {
+        grid-column: span 2;
+    }
+}
+
+@media (min-width: 900px) {
+    .chart-container {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .sp2 {
+        grid-column: span 2;
+    }
+
+    .sp3 {
+        grid-column: span 3;
+    }
+}
+
+/*-------------------------------------------*/
+
+.chart-container {
+    display: grid;
+    /* grid-template-columns: repeat(3, 1fr); */
+    /* grid-auto-rows: minmax(300px, auto); */
+    max-width: 1200px;
+    margin: 0 auto;
+    gap: .1rem;
+}
+
+.chart {
+    /* .chart-container > div {  */
+    background-color: var(--main-bg-color);
+    border: 1px solid #fff;
+    padding: 20px;
+    font-size: 1rem;
+    text-align: center;
+}
+
+.label {
+    background-color: var(--main-bg-color);
+    border: 1px solid #fff;
+}
+
+/* @media (min-width: 600px) {
+    .chart-container > div { 
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 900px) {
+    .chart-container > div { 
+        grid-template-columns: repeat(3, 1fr);
+    }
+} */
+
+.modal {
+    display: none;
+    /* Hidden by default */
+    position: fixed;
+    /* Stay in place */
+    z-index: 1;
+    /* Sit on top */
+    padding-top: 100px;
+    /* Location of the box */
+    left: 0;
+    top: 0;
+    width: 100%;
+    /* Full width */
+    height: 100%;
+    /* Full height */
+    overflow: auto;
+    /* Enable scroll if needed */
+    background-color: rgb(0, 0, 0);
+    /* Fallback color */
+    background-color: rgba(0, 0, 0, 0.4);
+    /* Black w/ opacity */
+}
+
+.w3-button {
+    border: 2px;
+    display: inline-block;
+    padding: 8px 16px;
+    vertical-align: middle;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    background-color: inherit;
+    text-align: center;
+    cursor: pointer;
+    white-space: nowrap
+}
+
+.w3-button:hover {
+    color: #000 !important;
+    background-color: #ccc !important
+}
+
+.w3-input {
+    padding: 8px;
+    display: block;
+    border: none;
+    border-bottom: 1px solid #ccc;
+    width: 100%
+}
+
+.w3-container,
+.w3-panel {
+    padding: 0.01em 16px
+}
+
+.w3-container:after,
+.w3-container:before {
+    content: "";
+    display: table;
+    clear: both
+}
+
+h1 {
+    font-size: 36px
+}
+
+h2 {
+    font-size: 30px
+}
+
+h3 {
+    font-size: 24px
+}
+
+h4 {
+    font-size: 20px
+}
+
+h5 {
+    font-size: 18px
+}
+
+h6 {
+    font-size: 16px
+}
+
+.span1 {
+    grid-column: span 1;
+}
+
+.span2 {
+    grid-column: span 2;
+}
+
+.span3 {
+    grid-column: span 3;
+}
